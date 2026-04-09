@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard - Indicadores</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #cfe8ff;
+        margin: 0;
+        padding: 20px;
+    }
+
+    .topo {
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .titulo {
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+        margin-top: 40px;
+        color: black;
+    }
+
+    .card {
+        width: 250px;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 40px auto;
+        text-align: center;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .card h3 {
+        margin: 0;
+        font-size: 18px;
+    }
+
+    .card p {
+        font-size: 28px;
+        font-weight: bold;
+        margin-top: 10px;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="topo">
+    Data de Atualização: <span id="dataAtualizacao">Carregando...</span>
+</div>
+
+<div class="titulo">
+    Indicadores de Performance
+</div>
+
+<div class="card">
+    <h3>Total de Cirurgias</h3>
+    <p id="totalCirurgias">...</p>
+</div>
+
+<script>
+
+// ✅ LINK CORRETO (apenas aba Cirurgias)
+const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&single=true&output=csv";
+
+fetch(url)
+    .then(response => response.text())
+    .then(data => {
+
+        const linhas = data.split("\n").map(l => l.split(","));
+
+        // 📅 DATA DE ATUALIZAÇÃO (A2)
+        const dataAtualizacao = linhas[1][0];
+        document.getElementById("dataAtualizacao").innerText = dataAtualizacao;
+
+        // 📊 COLUNA C = VALE
+        const vales = linhas.slice(1).map(l => l[2]);
+
+        // Limpar dados
+        const valesValidos = vales.filter(v => v && v.trim() !== "");
+
+        // Remover duplicados
+        const valesUnicos = [...new Set(valesValidos)];
+
+        // Resultado final
+        document.getElementById("totalCirurgias").innerText = valesUnicos.length;
+
+    })
+    .catch(error => {
+        console.error("Erro ao carregar dados:", error);
+        document.getElementById("totalCirurgias").innerText = "Erro";
+    });
+
+</script>
+
+</body>
+</html>
