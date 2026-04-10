@@ -93,6 +93,15 @@
 
 const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&single=true&output=csv";
 
+// Função para converter número BR corretamente
+function parseBR(valor) {
+    if (!valor) return 0;
+    return parseFloat(
+        valor.replace(/\./g, '') // remove milhar
+             .replace(',', '.')  // troca decimal
+    ) || 0;
+}
+
 fetch(url)
 .then(response => response.text())
 .then(data => {
@@ -102,25 +111,27 @@ fetch(url)
     // DATA
     document.getElementById("dataAtualizacao").innerText = linhas[1][0];
 
-    // COLUNA C (VALE)
-    const vales = linhas.slice(1).map(l => l[2]).filter(v => v && v.trim() !== "");
+    // TOTAL DE CIRURGIAS (SEM DUPLICAR VALE)
+    const vales = linhas.slice(1)
+        .map(l => l[2])
+        .filter(v => v && v.trim() !== "");
+
     const totalCirurgias = [...new Set(vales)].length;
     document.getElementById("totalCirurgias").innerText = totalCirurgias;
 
-    // RECEITA (AA = 26)
-    const receita = linhas.slice(1)
-        .map(l => parseFloat(l[26]?.replace(",", ".")) || 0)
-        .reduce((a, b) => a + b, 0);
+    // RECEITA (SOMA NORMAL - COLUNA AA = 26)
+    let receita = 0;
+    let custo = 0;
 
-    // CUSTO (AD = 29)
-    const custo = linhas.slice(1)
-        .map(l => parseFloat(l[29]?.replace(",", ".")) || 0)
-        .reduce((a, b) => a + b, 0);
+    linhas.slice(1).forEach(l => {
+        receita += parseBR(l[26]); // AA
+        custo += parseBR(l[29]);   // AD
+    });
 
     // RESULTADO
     const resultado = receita - custo;
 
-    // FORMATAR MOEDA
+    // FORMATAÇÃO
     const formatar = (valor) =>
         valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
