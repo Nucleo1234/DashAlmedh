@@ -25,23 +25,30 @@
         color: black;
     }
 
+    .container-cards {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 40px;
+        flex-wrap: wrap;
+    }
+
     .card {
-        width: 250px;
+        width: 180px;
         background: white;
-        padding: 20px;
+        padding: 15px;
         border-radius: 10px;
-        margin: 40px auto;
         text-align: center;
         box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
     }
 
     .card h3 {
         margin: 0;
-        font-size: 18px;
+        font-size: 14px;
     }
 
     .card p {
-        font-size: 28px;
+        font-size: 20px;
         font-weight: bold;
         margin-top: 10px;
     }
@@ -58,43 +65,73 @@
     Indicadores de Performance
 </div>
 
-<div class="card">
-    <h3>Total de Cirurgias</h3>
-    <p id="totalCirurgias">...</p>
+<div class="container-cards">
+    
+    <div class="card">
+        <h3>Total de Cirurgias</h3>
+        <p id="totalCirurgias">...</p>
+    </div>
+
+    <div class="card">
+        <h3>Receita Bruta R$</h3>
+        <p id="receita">...</p>
+    </div>
+
+    <div class="card">
+        <h3>Custo R$</h3>
+        <p id="custo">...</p>
+    </div>
+
+    <div class="card">
+        <h3>Resultado Bruto R$</h3>
+        <p id="resultado">...</p>
+    </div>
+
 </div>
 
 <script>
 
-// ✅ LINK CORRETO (apenas aba Cirurgias)
 const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&single=true&output=csv";
 
 fetch(url)
-    .then(response => response.text())
-    .then(data => {
+.then(response => response.text())
+.then(data => {
 
-        const linhas = data.split("\n").map(l => l.split(","));
+    const linhas = data.split("\n").map(l => l.split(","));
 
-        // 📅 DATA DE ATUALIZAÇÃO (A2)
-        const dataAtualizacao = linhas[1][0];
-        document.getElementById("dataAtualizacao").innerText = dataAtualizacao;
+    // DATA
+    document.getElementById("dataAtualizacao").innerText = linhas[1][0];
 
-        // 📊 COLUNA C = VALE
-        const vales = linhas.slice(1).map(l => l[2]);
+    // COLUNA C (VALE)
+    const vales = linhas.slice(1).map(l => l[2]).filter(v => v && v.trim() !== "");
+    const totalCirurgias = [...new Set(vales)].length;
+    document.getElementById("totalCirurgias").innerText = totalCirurgias;
 
-        // Limpar dados
-        const valesValidos = vales.filter(v => v && v.trim() !== "");
+    // RECEITA (AA = 26)
+    const receita = linhas.slice(1)
+        .map(l => parseFloat(l[26]?.replace(",", ".")) || 0)
+        .reduce((a, b) => a + b, 0);
 
-        // Remover duplicados
-        const valesUnicos = [...new Set(valesValidos)];
+    // CUSTO (AD = 29)
+    const custo = linhas.slice(1)
+        .map(l => parseFloat(l[29]?.replace(",", ".")) || 0)
+        .reduce((a, b) => a + b, 0);
 
-        // Resultado final
-        document.getElementById("totalCirurgias").innerText = valesUnicos.length;
+    // RESULTADO
+    const resultado = receita - custo;
 
-    })
-    .catch(error => {
-        console.error("Erro ao carregar dados:", error);
-        document.getElementById("totalCirurgias").innerText = "Erro";
-    });
+    // FORMATAR MOEDA
+    const formatar = (valor) =>
+        valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+    document.getElementById("receita").innerText = formatar(receita);
+    document.getElementById("custo").innerText = formatar(custo);
+    document.getElementById("resultado").innerText = formatar(resultado);
+
+})
+.catch(error => {
+    console.error("Erro:", error);
+});
 
 </script>
 
