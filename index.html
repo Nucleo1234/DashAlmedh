@@ -49,8 +49,12 @@
     }
 
     .grafico-container {
-        width: 90%;
+        width: 80%;
+        height: 350px;
         margin-top: 50px;
+        background-color: #5fa8d3;
+        padding: 20px;
+        border-radius: 10px;
     }
 </style>
 </head>
@@ -125,7 +129,12 @@ function parseCSV(texto) {
 
 function parseBR(v) {
     if (!v) return 0;
-    return parseFloat(v.replace(/\./g,'').replace(',','.')) || 0;
+    return parseFloat(
+        v.replace(/\./g,'')
+         .replace(',','.')
+         .replace(/"/g,'')
+         .trim()
+    ) || 0;
 }
 
 function getMesAno(data) {
@@ -150,7 +159,7 @@ fetch(url)
 
     linhas.slice(1).forEach(l => {
 
-        const dataCirurgia = l[5]; // 🔥 COLUNA F
+        const dataCirurgia = l[5]; // COLUNA F
         const mes = getMesAno(dataCirurgia);
 
         if (!mes) return;
@@ -171,13 +180,24 @@ fetch(url)
 
     const resultado = receitaTotal - custoTotal;
 
-    const formatar = v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+    const formatar = v =>
+        v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
     document.getElementById("receita").innerText = formatar(receitaTotal);
     document.getElementById("custo").innerText = formatar(custoTotal);
     document.getElementById("resultado").innerText = formatar(resultado);
 
-    const meses = Object.keys(mesesMap).sort();
+    // ORDENAR MESES CORRETAMENTE
+    const meses = Object.keys(mesesMap).sort((a, b) => {
+        const [mesA, anoA] = a.split('/');
+        const [mesB, anoB] = b.split('/');
+
+        const dataA = new Date(`20${anoA}`, mesA - 1);
+        const dataB = new Date(`20${anoB}`, mesB - 1);
+
+        return dataA - dataB;
+    });
+
     const receitas = meses.map(m => mesesMap[m].receita);
     const custos = meses.map(m => mesesMap[m].custo);
 
@@ -201,23 +221,72 @@ fetch(url)
             ]
         },
         options: {
+            responsive: true,
+            maintainAspectRatio: false,
+
             plugins: {
+                legend: {
+                    labels: {
+                        color: 'white',
+                        font: { weight: 'bold' }
+                    }
+                },
                 tooltip: {
                     callbacks: {
                         label: ctx =>
                             ctx.dataset.label + ": " +
-                            ctx.raw.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+                            ctx.raw.toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: "BRL"
+                            })
                     }
                 }
             },
+
             scales: {
+                x: {
+                    ticks: { color: 'white' }
+                },
                 y: {
                     ticks: {
-                        callback: v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+                        color: 'white',
+                        callback: v =>
+                            v.toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: "BRL"
+                            })
                     }
                 }
             }
-        }
+        },
+
+        plugins: [{
+            id: 'labels',
+            afterDatasetsDraw(chart) {
+                const { ctx } = chart;
+
+                chart.data.datasets.forEach((dataset, i) => {
+                    const meta = chart.getDatasetMeta(i);
+
+                    meta.data.forEach((bar, index) => {
+                        const valor = dataset.data[index];
+
+                        ctx.fillStyle = 'white';
+                        ctx.font = 'bold 10px Arial';
+                        ctx.textAlign = 'center';
+
+                        ctx.fillText(
+                            valor.toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: "BRL"
+                            }),
+                            bar.x,
+                            bar.y - 5
+                        );
+                    });
+                });
+            }
+        }]
     });
 
 })
