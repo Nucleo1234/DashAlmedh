@@ -33,25 +33,26 @@ body {
 }
 
 .card {
-    width: 150px; /* 🔥 menor */
+    width: 150px;
     background: white;
-    padding: 10px; /* 🔥 menor */
+    padding: 10px;
     border-radius: 10px;
     text-align: center;
 }
 
 .card h3 {
-    font-size: 12px; /* 🔥 menor */
+    font-size: 12px;
     margin: 0;
 }
 
 .card p {
-    font-size: 16px; /* 🔥 menor */
+    font-size: 16px;
     font-weight: bold;
     margin-top: 8px;
 }
 
-.grafico-container {
+.grafico-container,
+.pizza-container {
     width: 80%;
     height: 400px;
     margin-top: 40px;
@@ -81,6 +82,10 @@ body {
 
 <div class="grafico-container">
     <canvas id="graficoMensal"></canvas>
+</div>
+
+<div class="pizza-container">
+    <canvas id="graficoPizza"></canvas>
 </div>
 
 <script>
@@ -121,21 +126,43 @@ fetch(url).then(r=>r.text()).then(data=>{
 
     let map={},recT=0,cusT=0;
 
+    // 🔥 PIZZA
+    let mapPizza={};
+    let controleUnico={};
+
     linhas.slice(1).forEach(l=>{
 
+        let vale=l[2];
+        let situacao=l[4]; // ✅ COLUNA E
         let mes=mesAno(l[5]);
-        if(!mes)return;
 
-        let rec=br(l[26]);
+        let rec=br(l[27]); // ✅ COLUNA AB
         let cus=br(l[29]);
 
         recT+=rec; 
         cusT+=cus;
 
-        if(!map[mes]) map[mes]={rec:0,cus:0};
+        // ===== MENSAL =====
+        if(mes){
+            if(!map[mes]) map[mes]={rec:0,cus:0};
+            map[mes].rec+=rec;
+            map[mes].cus+=cus;
+        }
 
-        map[mes].rec+=rec;
-        map[mes].cus+=cus;
+        // ===== PIZZA =====
+        if(!mapPizza[situacao]){
+            mapPizza[situacao]={qtd:0,valor:0,vales:{}};
+        }
+
+        // contar vale único
+        if(!mapPizza[situacao].vales[vale]){
+            mapPizza[situacao].qtd++;
+            mapPizza[situacao].vales[vale]=true;
+        }
+
+        // somar valor total (todas linhas)
+        mapPizza[situacao].valor+=rec;
+
     });
 
     const formatar = v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
@@ -144,6 +171,7 @@ fetch(url).then(r=>r.text()).then(data=>{
     document.getElementById("custo").innerText = formatar(cusT);
     document.getElementById("resultado").innerText = formatar(recT - cusT);
 
+    // ===== GRAFICO MENSAL =====
     const meses=Object.keys(map).sort((a,b)=>{
         let [m1,y1]=a.split('/');
         let [m2,y2]=b.split('/');
@@ -168,83 +196,46 @@ fetch(url).then(r=>r.text()).then(data=>{
             ]
         },
         options:{
-            responsive:true,
-            maintainAspectRatio:false,
-            plugins:{
-                legend:{display:false}
-            },
+            plugins:{legend:{display:false}},
             scales:{
                 x:{ticks:{color:'white'}},
                 y:{ticks:{color:'white'}}
             }
+        }
+    });
+
+    // ===== GRAFICO PIZZA =====
+    const labels=Object.keys(mapPizza);
+    const dados=labels.map(l=>mapPizza[l].qtd);
+
+    new Chart(document.getElementById("graficoPizza"),{
+        type:'pie',
+        data:{
+            labels:labels,
+            datasets:[{
+                data:dados,
+                backgroundColor:labels.map((_,i)=>`hsl(${i*60},70%,60%)`)
+            }]
         },
-        plugins:[
+        options:{
+            plugins:{
+                legend:{
+                    position:'bottom',
+                    labels:{color:'white'}
+                },
+                tooltip:{
+                    callbacks:{
+                        label:(ctx)=>{
+                            let nome=ctx.label;
+                            let qtd=mapPizza[nome].qtd;
+                            let valor=mapPizza[nome].valor;
 
-        {
-            id:'labelsBarras',
-            afterDatasetsDraw(chart){
-                const {ctx}=chart;
-
-                chart.data.datasets.forEach((dataset,i)=>{
-                    const meta=chart.getDatasetMeta(i);
-
-                    meta.data.forEach((bar,index)=>{
-                        const valor=dataset.data[index];
-
-                        ctx.fillStyle='white';
-                        ctx.font='10px Arial';
-                        ctx.textAlign='center';
-
-                        ctx.fillText(
-                            valor.toLocaleString("pt-BR",{style:"currency",currency:"BRL"}),
-                            bar.x,
-                            bar.y-5
-                        );
-                    });
-                });
-            }
-        },
-
-        {
-            id:'linhaTopo',
-            afterDraw(chart){
-
-                const {ctx,chartArea:{left,right},scales:{x,y}}=chart;
-
-                const max=Math.max(...rec,...cus);
-                const yPos=y.getPixelForValue(max*1.15);
-
-                ctx.strokeStyle='white';
-                ctx.lineWidth=2;
-                ctx.beginPath();
-                ctx.moveTo(left,yPos);
-                ctx.lineTo(right,yPos);
-                ctx.stroke();
-
-                meses.forEach((m,i)=>{
-
-                    const xPos=x.getPixelForValue(i);
-
-                    ctx.beginPath();
-                    ctx.arc(xPos,yPos,5,0,Math.PI*2);
-                    ctx.fillStyle='yellow';
-                    ctx.fill();
-
-                    ctx.fillStyle='white';
-                    ctx.font='10px Arial';
-
-                    ctx.fillText(perc[i].toFixed(0)+'%', xPos, yPos+15);
-
-                    ctx.fillText(
-                        lucro[i].toLocaleString("pt-BR",{style:"currency",currency:"BRL"}),
-                        xPos,
-                        yPos+28
-                    );
-                });
+                            return `${nome} | Qtd: ${qtd} | ${valor.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}`;
+                        }
+                    }
+                }
             }
         }
-
-        ]
     });
 
 });
