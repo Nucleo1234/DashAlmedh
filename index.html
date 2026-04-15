@@ -159,7 +159,7 @@ fetch(url)
 
     linhas.slice(1).forEach(l => {
 
-        const dataCirurgia = l[5]; // COLUNA F
+        const dataCirurgia = l[5];
         const mes = getMesAno(dataCirurgia);
 
         if (!mes) return;
@@ -187,79 +187,43 @@ fetch(url)
     document.getElementById("custo").innerText = formatar(custoTotal);
     document.getElementById("resultado").innerText = formatar(resultado);
 
-    // ORDENAR MESES CORRETAMENTE
     const meses = Object.keys(mesesMap).sort((a, b) => {
         const [mesA, anoA] = a.split('/');
         const [mesB, anoB] = b.split('/');
 
-        const dataA = new Date(`20${anoA}`, mesA - 1);
-        const dataB = new Date(`20${anoB}`, mesB - 1);
-
-        return dataA - dataB;
+        return new Date(`20${anoA}`, mesA - 1) - new Date(`20${anoB}`, mesB - 1);
     });
 
     const receitas = meses.map(m => mesesMap[m].receita);
     const custos = meses.map(m => mesesMap[m].custo);
 
-    const ctx = document.getElementById("graficoMensal");
-
-    new Chart(ctx, {
+    new Chart(document.getElementById("graficoMensal"), {
         type: 'bar',
         data: {
             labels: meses,
             datasets: [
-                {
-                    label: 'Custo',
-                    data: custos,
-                    backgroundColor: '#ff7b7b'
-                },
-                {
-                    label: 'Receita',
-                    data: receitas,
-                    backgroundColor: '#4CAF50'
-                }
+                { label: 'Custo', data: custos, backgroundColor: '#ff7b7b' },
+                { label: 'Receita', data: receitas, backgroundColor: '#4CAF50' }
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-
             plugins: {
                 legend: {
-                    labels: {
-                        color: 'white',
-                        font: { weight: 'bold' }
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: ctx =>
-                            ctx.dataset.label + ": " +
-                            ctx.raw.toLocaleString("pt-BR", {
-                                style: "currency",
-                                currency: "BRL"
-                            })
-                    }
+                    labels: { color: 'white' }
                 }
             },
-
             scales: {
-                x: {
-                    ticks: { color: 'white' }
-                },
+                x: { ticks: { color: 'white' } },
                 y: {
                     ticks: {
                         color: 'white',
-                        callback: v =>
-                            v.toLocaleString("pt-BR", {
-                                style: "currency",
-                                currency: "BRL"
-                            })
+                        callback: v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
                     }
                 }
             }
         },
-
         plugins: [{
             id: 'labels',
             afterDatasetsDraw(chart) {
@@ -271,15 +235,12 @@ fetch(url)
                     meta.data.forEach((bar, index) => {
                         const valor = dataset.data[index];
 
-                        ctx.fillStyle = 'white';
-                        ctx.font = 'bold 10px Arial';
+                        ctx.fillStyle = 'black'; // 🔥 PRETO
+                        ctx.font = '10px Arial'; // 🔥 SEM NEGRITO
                         ctx.textAlign = 'center';
 
                         ctx.fillText(
-                            valor.toLocaleString("pt-BR", {
-                                style: "currency",
-                                currency: "BRL"
-                            }),
+                            valor.toLocaleString("pt-BR",{style:"currency",currency:"BRL"}),
                             bar.x,
                             bar.y - 5
                         );
