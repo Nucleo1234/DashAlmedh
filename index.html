@@ -108,10 +108,8 @@ fetch(url).then(r=>r.text()).then(data=>{
 
     const linhas=parseCSV(data);
 
-    // ✅ DATA
     document.getElementById("dataAtualizacao").innerText = linhas[1][0];
 
-    // ✅ TOTAL CIRURGIAS (SEM DUPLICAR)
     const vales = linhas.slice(1).map(l => l[2]).filter(v => v);
     document.getElementById("totalCirurgias").innerText = [...new Set(vales)].length;
 
@@ -134,14 +132,12 @@ fetch(url).then(r=>r.text()).then(data=>{
         map[mes].cus+=cus;
     });
 
-    // ✅ CARDS
     const formatar = v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 
     document.getElementById("receita").innerText = formatar(recT);
     document.getElementById("custo").innerText = formatar(cusT);
     document.getElementById("resultado").innerText = formatar(recT - cusT);
 
-    // ✅ ORDENAR MESES
     const meses=Object.keys(map).sort((a,b)=>{
         let [m1,y1]=a.split('/');
         let [m2,y2]=b.split('/');
@@ -161,25 +157,52 @@ fetch(url).then(r=>r.text()).then(data=>{
         data:{
             labels:meses,
             datasets:[
-                {label:'Custo',data:cus,backgroundColor:'#ff7b7b'},
-                {label:'Receita',data:rec,backgroundColor:'#4CAF50'}
+                {data:cus,backgroundColor:'#ff7b7b'},
+                {data:rec,backgroundColor:'#4CAF50'}
             ]
         },
         options:{
             responsive:true,
             maintainAspectRatio:false,
             plugins:{
-                legend:{labels:{color:'white'}}
+                legend:{display:false} // 🔥 REMOVE LEGENDA
             },
             scales:{
                 x:{ticks:{color:'white'}},
                 y:{ticks:{color:'white'}}
             }
         },
-        plugins:[{
+        plugins:[
 
+        // 🔥 VALORES NAS BARRAS
+        {
+            id:'labelsBarras',
+            afterDatasetsDraw(chart){
+                const {ctx}=chart;
+
+                chart.data.datasets.forEach((dataset,i)=>{
+                    const meta=chart.getDatasetMeta(i);
+
+                    meta.data.forEach((bar,index)=>{
+                        const valor=dataset.data[index];
+
+                        ctx.fillStyle='white';
+                        ctx.font='10px Arial';
+                        ctx.textAlign='center';
+
+                        ctx.fillText(
+                            valor.toLocaleString("pt-BR",{style:"currency",currency:"BRL"}),
+                            bar.x,
+                            bar.y-5
+                        );
+                    });
+                });
+            }
+        },
+
+        // 🔥 LINHA + INDICADORES
+        {
             id:'linhaTopo',
-
             afterDraw(chart){
 
                 const {ctx,chartArea:{left,right},scales:{x,y}}=chart;
@@ -187,7 +210,6 @@ fetch(url).then(r=>r.text()).then(data=>{
                 const max=Math.max(...rec,...cus);
                 const yPos=y.getPixelForValue(max*1.15);
 
-                // linha branca
                 ctx.strokeStyle='white';
                 ctx.lineWidth=2;
                 ctx.beginPath();
@@ -199,20 +221,16 @@ fetch(url).then(r=>r.text()).then(data=>{
 
                     const xPos=x.getPixelForValue(i);
 
-                    // bolinha
                     ctx.beginPath();
                     ctx.arc(xPos,yPos,5,0,Math.PI*2);
                     ctx.fillStyle='yellow';
                     ctx.fill();
 
-                    // % 
                     ctx.fillStyle='white';
                     ctx.font='10px Arial';
-                    ctx.textAlign='center';
 
                     ctx.fillText(perc[i].toFixed(0)+'%', xPos, yPos+15);
 
-                    // valor lucro
                     ctx.fillText(
                         lucro[i].toLocaleString("pt-BR",{style:"currency",currency:"BRL"}),
                         xPos,
@@ -220,8 +238,9 @@ fetch(url).then(r=>r.text()).then(data=>{
                     );
                 });
             }
+        }
 
-        }]
+        ]
     });
 
 });
