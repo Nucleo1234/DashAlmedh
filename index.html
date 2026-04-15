@@ -43,10 +43,10 @@ body {
 .grafico-container,
 .pizza-container {
     width: 80%;
-    height: 400px;
+    height: 420px;
     margin-top: 40px;
     background-color: #0f3b4c;
-    padding: 20px;
+    padding: 10px; /* 🔥 menor para gráfico ocupar tudo */
     border-radius: 10px;
 }
 </style>
@@ -116,7 +116,6 @@ document.getElementById("totalCirurgias").innerText = [...new Set(vales)].length
 let map={},recT=0,cusT=0;
 let mapPizza={};
 
-// LOOP
 linhas.slice(1).forEach(l=>{
 
     let vale=l[2];
@@ -156,20 +155,10 @@ document.getElementById("receita").innerText=f(recT);
 document.getElementById("custo").innerText=f(cusT);
 document.getElementById("resultado").innerText=f(recT-cusT);
 
-// ===== GRAFICO MENSAL (COMPLETO) =====
-const meses=Object.keys(map).sort((a,b)=>{
-    let [m1,y1]=a.split('/');
-    let [m2,y2]=b.split('/');
-    return new Date(`20${y1}`,m1-1)-new Date(`20${y2}`,m2-1);
-});
-
+// ===== MENSAL =====
+const meses=Object.keys(map);
 const rec=meses.map(m=>map[m].rec);
 const cus=meses.map(m=>map[m].cus);
-const lucro=meses.map(m=>map[m].rec-map[m].cus);
-const perc=meses.map(m=>{
-    let l=map[m].rec-map[m].cus;
-    return map[m].cus ? (l/map[m].cus)*100 : 0;
-});
 
 new Chart(document.getElementById("graficoMensal"),{
 type:'bar',
@@ -181,74 +170,21 @@ datasets:[
 ]
 },
 options:{
+responsive:true,
+maintainAspectRatio:false,
+layout:{padding:0},
 plugins:{legend:{display:false}},
 scales:{
 x:{ticks:{color:'white'}},
 y:{ticks:{color:'white'}}
 }
-},
-plugins:[
-
-// VALORES NAS BARRAS
-{
-id:'labels',
-afterDatasetsDraw(chart){
-const {ctx}=chart;
-chart.data.datasets.forEach((d,i)=>{
-chart.getDatasetMeta(i).data.forEach((bar,index)=>{
-ctx.fillStyle='white';
-ctx.font='10px Arial';
-ctx.textAlign='center';
-ctx.fillText(
-d.data[index].toLocaleString("pt-BR",{style:"currency",currency:"BRL"}),
-bar.x,
-bar.y-5
-);
-});
-});
 }
-},
-
-// LINHA + % + LUCRO
-{
-id:'linha',
-afterDraw(chart){
-
-const {ctx,chartArea:{left,right},scales:{x,y}}=chart;
-const max=Math.max(...rec,...cus);
-const yPos=y.getPixelForValue(max*1.15);
-
-ctx.strokeStyle='white';
-ctx.beginPath();
-ctx.moveTo(left,yPos);
-ctx.lineTo(right,yPos);
-ctx.stroke();
-
-meses.forEach((m,i)=>{
-
-let xPos=x.getPixelForValue(i);
-
-ctx.beginPath();
-ctx.arc(xPos,yPos,5,0,Math.PI*2);
-ctx.fillStyle='yellow';
-ctx.fill();
-
-ctx.fillStyle='white';
-ctx.font='10px Arial';
-
-ctx.fillText(perc[i].toFixed(0)+'%',xPos,yPos+15);
-ctx.fillText(f(lucro[i]),xPos,yPos+28);
-
-});
-}
-}
-
-]
 });
 
 // ===== PIZZA =====
 const labels=Object.keys(mapPizza);
 const dados=labels.map(l=>mapPizza[l].qtd);
+const total=dados.reduce((a,b)=>a+b,0);
 
 new Chart(document.getElementById("graficoPizza"),{
 type:'pie',
@@ -273,7 +209,31 @@ return `${nome} | Qtd: ${qtd} | ${f(valor)}`;
 }
 }
 }
+},
+plugins:[{
+id:'labelsPizza',
+afterDraw(chart){
+
+const {ctx}=chart;
+
+chart.data.datasets[0].data.forEach((valor,i)=>{
+
+let meta=chart.getDatasetMeta(0).data[i];
+let percent=((valor/total)*100).toFixed(0);
+
+ctx.fillStyle='white';
+ctx.font='10px Arial';
+ctx.textAlign='center';
+
+ctx.fillText(
+`${valor} (${percent}%)`,
+meta.x,
+meta.y
+);
+
+});
 }
+}]
 });
 
 });
