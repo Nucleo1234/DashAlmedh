@@ -91,21 +91,58 @@
 
 <script>
 
-const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&single=true&output=csv";
+// 🔥 LINK NOVO (ESTÁVEL)
+const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/gviz/tq?tqx=out:csv&gid=1391018010";
+
+function parseNumeroSeguro(valor) {
+    if (!valor) return 0;
+
+    valor = valor.replace(/"/g, '').trim();
+
+    if (valor.includes(',') && valor.includes('.')) {
+        valor = valor.replace(/\./g, '').replace(',', '.');
+    } else if (valor.includes(',')) {
+        valor = valor.replace(',', '.');
+    }
+
+    return parseFloat(valor) || 0;
+}
 
 fetch(url)
 .then(response => response.text())
 .then(data => {
 
-    // 🔥 TESTE: verificar se carregou
-    console.log("DADOS CARREGADOS:");
-    console.log(data);
+    const linhas = data.split("\n").map(l => l.split(","));
 
-    document.getElementById("dataAtualizacao").innerText = "OK - carregou";
+    document.getElementById("dataAtualizacao").innerText = linhas[1][0];
+
+    const vales = linhas.slice(1)
+        .map(l => l[2])
+        .filter(v => v && v.trim() !== "");
+
+    const totalCirurgias = [...new Set(vales)].length;
+    document.getElementById("totalCirurgias").innerText = totalCirurgias;
+
+    let receita = 0;
+    let custo = 0;
+
+    linhas.slice(1).forEach(l => {
+        receita += parseNumeroSeguro(l[26]);
+        custo += parseNumeroSeguro(l[29]);
+    });
+
+    const resultado = receita - custo;
+
+    const formatar = (valor) =>
+        valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+    document.getElementById("receita").innerText = formatar(receita);
+    document.getElementById("custo").innerText = formatar(custo);
+    document.getElementById("resultado").innerText = formatar(resultado);
 
 })
 .catch(error => {
-    console.error("ERRO:", error);
+    console.error(error);
     document.getElementById("dataAtualizacao").innerText = "ERRO AO CARREGAR";
 });
 
