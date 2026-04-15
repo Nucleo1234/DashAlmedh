@@ -2,36 +2,62 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Dashboard</title>
+<title>Dashboard - Indicadores</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <style>
-body { font-family: Arial; background:#cfe8ff; padding:20px;}
+body {
+    font-family: Arial;
+    background-color: #cfe8ff;
+    padding: 20px;
+}
 
-.topo {font-size:13px;font-weight:bold;}
-.titulo {text-align:center;font-size:22px;font-weight:bold;margin-top:30px;}
+.topo {
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.titulo {
+    text-align: center;
+    font-size: 22px;
+    font-weight: bold;
+    margin-top: 30px;
+}
 
 .container-cards {
-    display:flex; justify-content:center; gap:15px; margin-top:30px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 30px;
 }
 
 .card {
-    width:150px; background:white; padding:10px;
-    border-radius:10px; text-align:center;
+    width: 150px; /* 🔥 menor */
+    background: white;
+    padding: 10px; /* 🔥 menor */
+    border-radius: 10px;
+    text-align: center;
 }
 
-.card h3 {font-size:12px;margin:0;}
-.card p {font-size:16px;font-weight:bold;}
+.card h3 {
+    font-size: 12px; /* 🔥 menor */
+    margin: 0;
+}
+
+.card p {
+    font-size: 16px; /* 🔥 menor */
+    font-weight: bold;
+    margin-top: 8px;
+}
 
 .grafico-container {
-    width:80%; height:400px; margin-top:40px;
-    background:#0f3b4c; padding:20px; border-radius:10px;
-}
-
-.pizza-container {
-    width:80%; height:400px; margin-top:40px;
-    background:#0f3b4c; padding:20px; border-radius:10px;
+    width: 80%;
+    height: 400px;
+    margin-top: 40px;
+    background-color: #0f3b4c;
+    padding: 20px;
+    border-radius: 10px;
 }
 </style>
 </head>
@@ -39,142 +65,187 @@ body { font-family: Arial; background:#cfe8ff; padding:20px;}
 <body>
 
 <div class="topo">
-Data de Atualização: <span id="dataAtualizacao"></span>
+    Data de Atualização: <span id="dataAtualizacao">...</span>
 </div>
 
-<div class="titulo">Indicadores de Performance</div>
+<div class="titulo">
+    Indicadores de Performance
+</div>
 
 <div class="container-cards">
-<div class="card"><h3>Total</h3><p id="totalCirurgias"></p></div>
-<div class="card"><h3>Receita</h3><p id="receita"></p></div>
-<div class="card"><h3>Custo</h3><p id="custo"></p></div>
-<div class="card"><h3>Resultado</h3><p id="resultado"></p></div>
+    <div class="card"><h3>Total de Cirurgias</h3><p id="totalCirurgias">...</p></div>
+    <div class="card"><h3>Receita Bruta R$</h3><p id="receita">...</p></div>
+    <div class="card"><h3>Custo R$</h3><p id="custo">...</p></div>
+    <div class="card"><h3>Resultado Bruto R$</h3><p id="resultado">...</p></div>
 </div>
 
 <div class="grafico-container">
-<canvas id="graficoMensal"></canvas>
-</div>
-
-<div class="pizza-container">
-<canvas id="graficoPizza"></canvas>
+    <canvas id="graficoMensal"></canvas>
 </div>
 
 <script>
 
-const url="https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&output=csv";
+const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&output=csv";
 
 function parseCSV(t){
-const l=[];let r=[],v='',q=false;
-for(let c of t){
-if(c=='"')q=!q;
-else if(c==','&&!q){r.push(v);v=''}
-else if((c=='\n'||c=='\r')&&!q){if(v||r.length){r.push(v);l.push(r);r=[];v=''}}
-else v+=c;}
-if(v||r.length){r.push(v);l.push(r)}
-return l;
+    const l=[];let r=[],v='',q=false;
+    for(let c of t){
+        if(c=='"')q=!q;
+        else if(c==','&&!q){r.push(v);v=''}
+        else if((c=='\n'||c=='\r')&&!q){
+            if(v||r.length){r.push(v);l.push(r);r=[];v=''}
+        } else v+=c;
+    }
+    if(v||r.length){r.push(v);l.push(r)}
+    return l;
 }
 
 function br(v){
-return parseFloat(v?.replace(/\./g,'').replace(',','.'))||0;
+    return parseFloat(v?.replace(/\./g,'').replace(',','.'))||0;
 }
 
 function mesAno(d){
-if(!d||!d.includes("/"))return "";
-let p=d.split("/");
-return p[1]+"/"+p[2].slice(-2);
+    if(!d||!d.includes("/"))return "";
+    let p=d.split("/");
+    return p[1]+"/"+p[2].slice(-2);
 }
 
 fetch(url).then(r=>r.text()).then(data=>{
 
-const linhas=parseCSV(data);
+    const linhas=parseCSV(data);
 
-document.getElementById("dataAtualizacao").innerText=linhas[1][0];
+    document.getElementById("dataAtualizacao").innerText = linhas[1][0];
 
-// TOTAL CIRURGIAS (VALE ÚNICO)
-const valesUnicos=[...new Set(linhas.slice(1).map(l=>l[2]).filter(v=>v))];
-document.getElementById("totalCirurgias").innerText=valesUnicos.length;
+    const vales = linhas.slice(1).map(l => l[2]).filter(v => v);
+    document.getElementById("totalCirurgias").innerText = [...new Set(vales)].length;
 
-let mapMes={},recT=0,cusT=0;
+    let map={},recT=0,cusT=0;
 
-// 🔥 PIZZA
-let mapPizza={};
+    linhas.slice(1).forEach(l=>{
 
-// CONTROLE DE VALE ÚNICO
-let controleGlobal={};
+        let mes=mesAno(l[5]);
+        if(!mes)return;
 
-linhas.slice(1).forEach(l=>{
+        let rec=br(l[26]);
+        let cus=br(l[29]);
 
-let vale=l[2];
-let dataCir=l[5];
+        recT+=rec; 
+        cusT+=cus;
 
-let receita=br(l[27]); // ✅ COLUNA AB
-let custo=br(l[29]);
+        if(!map[mes]) map[mes]={rec:0,cus:0};
 
-// ===== CARDS =====
-recT+=receita;
-cusT+=custo;
+        map[mes].rec+=rec;
+        map[mes].cus+=cus;
+    });
 
-// ===== MENSAL =====
-let mes=mesAno(dataCir);
-if(mes){
-if(!mapMes[mes]) mapMes[mes]={rec:0,cus:0};
-mapMes[mes].rec+=receita;
-mapMes[mes].cus+=custo;
-}
+    const formatar = v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 
-// ===== PIZZA =====
-if(!mapPizza[vale]){
-mapPizza[vale]={qtd:0,valor:0};
-}
+    document.getElementById("receita").innerText = formatar(recT);
+    document.getElementById("custo").innerText = formatar(cusT);
+    document.getElementById("resultado").innerText = formatar(recT - cusT);
 
-// contar 1 vez por vale
-if(!controleGlobal[vale]){
-mapPizza[vale].qtd=1;
-controleGlobal[vale]=true;
-}
+    const meses=Object.keys(map).sort((a,b)=>{
+        let [m1,y1]=a.split('/');
+        let [m2,y2]=b.split('/');
+        return new Date(`20${y1}`,m1-1)-new Date(`20${y2}`,m2-1);
+    });
 
-// soma valor total (todas linhas)
-mapPizza[vale].valor+=receita;
+    const rec=meses.map(m=>map[m].rec);
+    const cus=meses.map(m=>map[m].cus);
+    const lucro=meses.map(m=>map[m].rec-map[m].cus);
+    const perc=meses.map(m=>{
+        let l=map[m].rec-map[m].cus;
+        return map[m].cus ? (l/map[m].cus)*100 : 0;
+    });
 
-});
+    new Chart(document.getElementById("graficoMensal"),{
+        type:'bar',
+        data:{
+            labels:meses,
+            datasets:[
+                {data:cus,backgroundColor:'#ff7b7b'},
+                {data:rec,backgroundColor:'#4CAF50'}
+            ]
+        },
+        options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{
+                legend:{display:false}
+            },
+            scales:{
+                x:{ticks:{color:'white'}},
+                y:{ticks:{color:'white'}}
+            }
+        },
+        plugins:[
 
-// CARDS
-const formatar=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+        {
+            id:'labelsBarras',
+            afterDatasetsDraw(chart){
+                const {ctx}=chart;
 
-document.getElementById("receita").innerText=formatar(recT);
-document.getElementById("custo").innerText=formatar(cusT);
-document.getElementById("resultado").innerText=formatar(recT-cusT);
+                chart.data.datasets.forEach((dataset,i)=>{
+                    const meta=chart.getDatasetMeta(i);
 
-// ===== GRAFICO PIZZA =====
-const labels=Object.keys(mapPizza);
-const dados=labels.map(l=>mapPizza[l].qtd);
+                    meta.data.forEach((bar,index)=>{
+                        const valor=dataset.data[index];
 
-new Chart(document.getElementById("graficoPizza"),{
-type:'pie',
-data:{
-labels:labels,
-datasets:[{
-data:dados,
-backgroundColor:labels.map((_,i)=>`hsl(${i*40},70%,60%)`)
-}]
-},
-options:{
-plugins:{
-legend:{position:'bottom',labels:{color:'white'}},
-tooltip:{
-callbacks:{
-label:(ctx)=>{
-let nome=ctx.label;
-let qtd=mapPizza[nome].qtd;
-let valor=mapPizza[nome].valor;
+                        ctx.fillStyle='white';
+                        ctx.font='10px Arial';
+                        ctx.textAlign='center';
 
-return `${nome} | Qtd: ${qtd} | ${valor.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}`;
-}
-}
-}
-}
-}
-});
+                        ctx.fillText(
+                            valor.toLocaleString("pt-BR",{style:"currency",currency:"BRL"}),
+                            bar.x,
+                            bar.y-5
+                        );
+                    });
+                });
+            }
+        },
+
+        {
+            id:'linhaTopo',
+            afterDraw(chart){
+
+                const {ctx,chartArea:{left,right},scales:{x,y}}=chart;
+
+                const max=Math.max(...rec,...cus);
+                const yPos=y.getPixelForValue(max*1.15);
+
+                ctx.strokeStyle='white';
+                ctx.lineWidth=2;
+                ctx.beginPath();
+                ctx.moveTo(left,yPos);
+                ctx.lineTo(right,yPos);
+                ctx.stroke();
+
+                meses.forEach((m,i)=>{
+
+                    const xPos=x.getPixelForValue(i);
+
+                    ctx.beginPath();
+                    ctx.arc(xPos,yPos,5,0,Math.PI*2);
+                    ctx.fillStyle='yellow';
+                    ctx.fill();
+
+                    ctx.fillStyle='white';
+                    ctx.font='10px Arial';
+
+                    ctx.fillText(perc[i].toFixed(0)+'%', xPos, yPos+15);
+
+                    ctx.fillText(
+                        lucro[i].toLocaleString("pt-BR",{style:"currency",currency:"BRL"}),
+                        xPos,
+                        yPos+28
+                    );
+                });
+            }
+        }
+
+        ]
+    });
 
 });
 
