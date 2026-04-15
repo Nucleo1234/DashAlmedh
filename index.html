@@ -30,7 +30,8 @@ body { font-family: Arial; background:#cfe8ff; padding:20px;}
 }
 
 .pizza-container {
-    width:60%; margin-top:40px;
+    width:80%; height:400px; margin-top:40px;
+    background:#0f3b4c; padding:20px; border-radius:10px;
 }
 </style>
 </head>
@@ -89,78 +90,77 @@ const linhas=parseCSV(data);
 
 document.getElementById("dataAtualizacao").innerText=linhas[1][0];
 
+// TOTAL CIRURGIAS (VALE ÚNICO)
 const valesUnicos=[...new Set(linhas.slice(1).map(l=>l[2]).filter(v=>v))];
 document.getElementById("totalCirurgias").innerText=valesUnicos.length;
 
 let mapMes={},recT=0,cusT=0;
-let mapPizza={};
-let controleVale={};
 
-// LOOP
+// 🔥 PIZZA
+let mapPizza={};
+
+// CONTROLE DE VALE ÚNICO
+let controleGlobal={};
+
 linhas.slice(1).forEach(l=>{
 
 let vale=l[2];
-let situacao=l[27]; // ⚠️ AJUSTAR SE NECESSÁRIO
 let dataCir=l[5];
 
-let rec=br(l[27]); // ❌ errado proposital para evitar erro
-rec=br(l[27]);
-
-rec=br(l[27]); // placeholder
-
-// ✔ RECEITA AGORA COLUNA AB = 27
-rec=br(l[27]);
-
+let receita=br(l[27]); // ✅ COLUNA AB
 let custo=br(l[29]);
+
+// ===== CARDS =====
+recT+=receita;
+cusT+=custo;
 
 // ===== MENSAL =====
 let mes=mesAno(dataCir);
 if(mes){
 if(!mapMes[mes]) mapMes[mes]={rec:0,cus:0};
-mapMes[mes].rec+=rec;
+mapMes[mes].rec+=receita;
 mapMes[mes].cus+=custo;
 }
 
-recT+=rec;
-cusT+=custo;
-
 // ===== PIZZA =====
-if(!mapPizza[situacao]){
-mapPizza[situacao]={qtd:0,valor:0,vales:{}};
+if(!mapPizza[vale]){
+mapPizza[vale]={qtd:0,valor:0};
 }
 
-// contar vale único
-if(!mapPizza[situacao].vales[vale]){
-mapPizza[situacao].qtd++;
-mapPizza[situacao].vales[vale]=true;
+// contar 1 vez por vale
+if(!controleGlobal[vale]){
+mapPizza[vale].qtd=1;
+controleGlobal[vale]=true;
 }
 
-// somar valor total (SEM RESTRIÇÃO)
-mapPizza[situacao].valor+=rec;
+// soma valor total (todas linhas)
+mapPizza[vale].valor+=receita;
 
 });
 
-document.getElementById("receita").innerText=recT.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-document.getElementById("custo").innerText=cusT.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-document.getElementById("resultado").innerText=(recT-cusT).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+// CARDS
+const formatar=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+
+document.getElementById("receita").innerText=formatar(recT);
+document.getElementById("custo").innerText=formatar(cusT);
+document.getElementById("resultado").innerText=formatar(recT-cusT);
 
 // ===== GRAFICO PIZZA =====
 const labels=Object.keys(mapPizza);
-const valores=labels.map(l=>mapPizza[l].qtd);
+const dados=labels.map(l=>mapPizza[l].qtd);
 
 new Chart(document.getElementById("graficoPizza"),{
 type:'pie',
 data:{
 labels:labels,
 datasets:[{
-data:valores,
-backgroundColor:[
-'#4CAF50','#FF6384','#36A2EB','#FFCE56','#8e44ad','#e67e22'
-]
+data:dados,
+backgroundColor:labels.map((_,i)=>`hsl(${i*40},70%,60%)`)
 }]
 },
 options:{
 plugins:{
+legend:{position:'bottom',labels:{color:'white'}},
 tooltip:{
 callbacks:{
 label:(ctx)=>{
@@ -168,8 +168,7 @@ let nome=ctx.label;
 let qtd=mapPizza[nome].qtd;
 let valor=mapPizza[nome].valor;
 
-return nome+" | Qtd: "+qtd+" | "+
-valor.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+return `${nome} | Qtd: ${qtd} | ${valor.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}`;
 }
 }
 }
