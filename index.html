@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <title>Dashboard - Indicadores</title>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -52,6 +54,11 @@
         font-weight: bold;
         margin-top: 10px;
     }
+
+    .grafico-container {
+        width: 90%;
+        margin-top: 50px;
+    }
 </style>
 </head>
 
@@ -89,12 +96,15 @@
 
 </div>
 
+<!-- GRÁFICO -->
+<div class="grafico-container">
+    <canvas id="graficoMensal"></canvas>
+</div>
+
 <script>
 
-// 🔗 LINK DA PLANILHA
 const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&single=true&output=csv";
 
-// ✅ PARSER CSV CORRETO (resolve vírgula em valores)
 function parseCSV(texto) {
     const linhas = [];
     let linha = [];
@@ -104,13 +114,11 @@ function parseCSV(texto) {
     for (let i = 0; i < texto.length; i++) {
         const char = texto[i];
 
-        if (char === '"') {
-            dentroAspas = !dentroAspas;
-        } 
+        if (char === '"') dentroAspas = !dentroAspas;
         else if (char === ',' && !dentroAspas) {
             linha.push(valor);
             valor = '';
-        } 
+        }
         else if ((char === '\n' || char === '\r') && !dentroAspas) {
             if (valor !== '' || linha.length > 0) {
                 linha.push(valor);
@@ -118,8 +126,7 @@ function parseCSV(texto) {
                 linha = [];
                 valor = '';
             }
-        } 
-        else {
+        } else {
             valor += char;
         }
     }
@@ -132,17 +139,21 @@ function parseCSV(texto) {
     return linhas;
 }
 
-// ✅ CONVERSÃO CORRETA DE NÚMERO BR
 function parseBR(valor) {
     if (!valor) return 0;
 
     return parseFloat(
-        valor
-            .replace(/\./g, '') // remove milhar
-            .replace(',', '.')  // decimal
-            .replace(/"/g, '')  // remove aspas
-            .trim()
+        valor.replace(/\./g, '')
+             .replace(',', '.')
+             .replace(/"/g, '')
+             .trim()
     ) || 0;
+}
+
+function getMesAno(data) {
+    if (!data) return "";
+    const partes = data.split("/");
+    return partes[1] + "/" + partes[2].slice(-2);
 }
 
 fetch(url)
@@ -151,38 +162,105 @@ fetch(url)
 
     const linhas = parseCSV(data);
 
-    // DATA
     document.getElementById("dataAtualizacao").innerText = linhas[1][0];
 
-    // TOTAL CIRURGIAS (VALE ÚNICO)
     const vales = linhas.slice(1)
         .map(l => l[2])
         .filter(v => v && v.trim() !== "");
 
     const totalCirurgias = [...new Set(vales)].length;
-    document.getElementById("totalCirurgias").innerText = totalCirurgias;
 
-    let receita = 0;
-    let custo = 0;
+    let receitaTotal = 0;
+    let custoTotal = 0;
+
+    const dadosMensais = {};
 
     linhas.slice(1).forEach(l => {
-        receita += parseBR(l[26]); // Coluna AA
-        custo += parseBR(l[29]);   // Coluna AD
+
+        const data = l[0];
+        const mes = getMesAno(data);
+
+        const receita = parseBR(l[26]);
+        const custo = parseBR(l[29]);
+
+        receitaTotal += receita;
+        custoTotal += custo;
+
+        if (!dadosMensais[mes]) {
+            dadosMensais[mes] = { receita: 0, custo: 0 };
+        }
+
+        dadosMensais[mes].receita += receita;
+        dadosMensais[mes].custo += custo;
     });
 
-    const resultado = receita - custo;
+    const resultado = receitaTotal - custoTotal;
 
-    const formatar = (valor) =>
-        valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const formatar = v =>
+        v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-    document.getElementById("receita").innerText = formatar(receita);
-    document.getElementById("custo").innerText = formatar(custo);
+    document.getElementById("totalCirurgias").innerText = totalCirurgias;
+    document.getElementById("receita").innerText = formatar(receitaTotal);
+    document.getElementById("custo").innerText = formatar(custoTotal);
     document.getElementById("resultado").innerText = formatar(resultado);
+
+    const meses = Object.keys(dadosMensais).sort();
+    const receitas = meses.map(m => dadosMensais[m].receita);
+    const custos = meses.map(m => dadosMensais[m].custo);
+
+    new Chart(document.getElementById("graficoMensal"), {
+        type: 'bar',
+        data: {
+            labels: meses,
+            datasets: [
+                {
+                    label: 'Custo',
+                    data: custos,
+                    backgroundColor: '#ff7b7b'
+                },
+                {
+                    label: 'Receita',
+                    data: receitas,
+                    backgroundColor: '#4CAF50'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' +
+                                context.raw.toLocaleString("pt-BR", {
+                                    style: "currency",
+                                    currency: "BRL"
+                                });
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: "BRL"
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    });
 
 })
 .catch(error => {
     console.error("Erro:", error);
-    document.getElementById("dataAtualizacao").innerText = "Erro ao carregar";
 });
 
 </script>
