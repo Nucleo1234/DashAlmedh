@@ -13,10 +13,7 @@ body {
     padding: 20px;
 }
 
-.topo {
-    font-size: 13px;
-    font-weight: bold;
-}
+.topo { font-size: 13px; font-weight: bold; }
 
 .titulo {
     text-align: center;
@@ -40,16 +37,8 @@ body {
     text-align: center;
 }
 
-.card h3 {
-    font-size: 12px;
-    margin: 0;
-}
-
-.card p {
-    font-size: 16px;
-    font-weight: bold;
-    margin-top: 8px;
-}
+.card h3 { font-size: 12px; margin: 0; }
+.card p { font-size: 16px; font-weight: bold; }
 
 .grafico-container,
 .pizza-container {
@@ -69,9 +58,7 @@ body {
     Data de Atualização: <span id="dataAtualizacao">...</span>
 </div>
 
-<div class="titulo">
-    Indicadores de Performance
-</div>
+<div class="titulo">Indicadores de Performance</div>
 
 <div class="container-cards">
     <div class="card"><h3>Total de Cirurgias</h3><p id="totalCirurgias">...</p></div>
@@ -117,126 +104,177 @@ function mesAno(d){
 
 fetch(url).then(r=>r.text()).then(data=>{
 
-    const linhas=parseCSV(data);
+const linhas=parseCSV(data);
 
-    document.getElementById("dataAtualizacao").innerText = linhas[1][0];
+// DATA
+document.getElementById("dataAtualizacao").innerText = linhas[1][0];
 
-    const vales = linhas.slice(1).map(l => l[2]).filter(v => v);
-    document.getElementById("totalCirurgias").innerText = [...new Set(vales)].length;
+// TOTAL
+const vales = linhas.slice(1).map(l => l[2]).filter(v => v);
+document.getElementById("totalCirurgias").innerText = [...new Set(vales)].length;
 
-    let map={},recT=0,cusT=0;
+let map={},recT=0,cusT=0;
+let mapPizza={};
 
-    // 🔥 PIZZA
-    let mapPizza={};
-    let controleUnico={};
+// LOOP
+linhas.slice(1).forEach(l=>{
 
-    linhas.slice(1).forEach(l=>{
+    let vale=l[2];
+    let situacao=l[4];
+    let mes=mesAno(l[5]);
 
-        let vale=l[2];
-        let situacao=l[4]; // ✅ COLUNA E
-        let mes=mesAno(l[5]);
+    let rec=br(l[27]); // AB
+    let cus=br(l[29]);
 
-        let rec=br(l[27]); // ✅ COLUNA AB
-        let cus=br(l[29]);
+    recT+=rec;
+    cusT+=cus;
 
-        recT+=rec; 
-        cusT+=cus;
+    // MENSAL
+    if(mes){
+        if(!map[mes]) map[mes]={rec:0,cus:0};
+        map[mes].rec+=rec;
+        map[mes].cus+=cus;
+    }
 
-        // ===== MENSAL =====
-        if(mes){
-            if(!map[mes]) map[mes]={rec:0,cus:0};
-            map[mes].rec+=rec;
-            map[mes].cus+=cus;
-        }
+    // PIZZA
+    if(!mapPizza[situacao]){
+        mapPizza[situacao]={qtd:0,valor:0,vales:{}};
+    }
 
-        // ===== PIZZA =====
-        if(!mapPizza[situacao]){
-            mapPizza[situacao]={qtd:0,valor:0,vales:{}};
-        }
+    if(!mapPizza[situacao].vales[vale]){
+        mapPizza[situacao].qtd++;
+        mapPizza[situacao].vales[vale]=true;
+    }
 
-        // contar vale único
-        if(!mapPizza[situacao].vales[vale]){
-            mapPizza[situacao].qtd++;
-            mapPizza[situacao].vales[vale]=true;
-        }
+    mapPizza[situacao].valor+=rec;
 
-        // somar valor total (todas linhas)
-        mapPizza[situacao].valor+=rec;
+});
 
-    });
+// CARDS
+const f=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+document.getElementById("receita").innerText=f(recT);
+document.getElementById("custo").innerText=f(cusT);
+document.getElementById("resultado").innerText=f(recT-cusT);
 
-    const formatar = v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+// ===== GRAFICO MENSAL (COMPLETO) =====
+const meses=Object.keys(map).sort((a,b)=>{
+    let [m1,y1]=a.split('/');
+    let [m2,y2]=b.split('/');
+    return new Date(`20${y1}`,m1-1)-new Date(`20${y2}`,m2-1);
+});
 
-    document.getElementById("receita").innerText = formatar(recT);
-    document.getElementById("custo").innerText = formatar(cusT);
-    document.getElementById("resultado").innerText = formatar(recT - cusT);
+const rec=meses.map(m=>map[m].rec);
+const cus=meses.map(m=>map[m].cus);
+const lucro=meses.map(m=>map[m].rec-map[m].cus);
+const perc=meses.map(m=>{
+    let l=map[m].rec-map[m].cus;
+    return map[m].cus ? (l/map[m].cus)*100 : 0;
+});
 
-    // ===== GRAFICO MENSAL =====
-    const meses=Object.keys(map).sort((a,b)=>{
-        let [m1,y1]=a.split('/');
-        let [m2,y2]=b.split('/');
-        return new Date(`20${y1}`,m1-1)-new Date(`20${y2}`,m2-1);
-    });
+new Chart(document.getElementById("graficoMensal"),{
+type:'bar',
+data:{
+labels:meses,
+datasets:[
+{data:cus,backgroundColor:'#ff7b7b'},
+{data:rec,backgroundColor:'#4CAF50'}
+]
+},
+options:{
+plugins:{legend:{display:false}},
+scales:{
+x:{ticks:{color:'white'}},
+y:{ticks:{color:'white'}}
+}
+},
+plugins:[
 
-    const rec=meses.map(m=>map[m].rec);
-    const cus=meses.map(m=>map[m].cus);
-    const lucro=meses.map(m=>map[m].rec-map[m].cus);
-    const perc=meses.map(m=>{
-        let l=map[m].rec-map[m].cus;
-        return map[m].cus ? (l/map[m].cus)*100 : 0;
-    });
+// VALORES NAS BARRAS
+{
+id:'labels',
+afterDatasetsDraw(chart){
+const {ctx}=chart;
+chart.data.datasets.forEach((d,i)=>{
+chart.getDatasetMeta(i).data.forEach((bar,index)=>{
+ctx.fillStyle='white';
+ctx.font='10px Arial';
+ctx.textAlign='center';
+ctx.fillText(
+d.data[index].toLocaleString("pt-BR",{style:"currency",currency:"BRL"}),
+bar.x,
+bar.y-5
+);
+});
+});
+}
+},
 
-    new Chart(document.getElementById("graficoMensal"),{
-        type:'bar',
-        data:{
-            labels:meses,
-            datasets:[
-                {data:cus,backgroundColor:'#ff7b7b'},
-                {data:rec,backgroundColor:'#4CAF50'}
-            ]
-        },
-        options:{
-            plugins:{legend:{display:false}},
-            scales:{
-                x:{ticks:{color:'white'}},
-                y:{ticks:{color:'white'}}
-            }
-        }
-    });
+// LINHA + % + LUCRO
+{
+id:'linha',
+afterDraw(chart){
 
-    // ===== GRAFICO PIZZA =====
-    const labels=Object.keys(mapPizza);
-    const dados=labels.map(l=>mapPizza[l].qtd);
+const {ctx,chartArea:{left,right},scales:{x,y}}=chart;
+const max=Math.max(...rec,...cus);
+const yPos=y.getPixelForValue(max*1.15);
 
-    new Chart(document.getElementById("graficoPizza"),{
-        type:'pie',
-        data:{
-            labels:labels,
-            datasets:[{
-                data:dados,
-                backgroundColor:labels.map((_,i)=>`hsl(${i*60},70%,60%)`)
-            }]
-        },
-        options:{
-            plugins:{
-                legend:{
-                    position:'bottom',
-                    labels:{color:'white'}
-                },
-                tooltip:{
-                    callbacks:{
-                        label:(ctx)=>{
-                            let nome=ctx.label;
-                            let qtd=mapPizza[nome].qtd;
-                            let valor=mapPizza[nome].valor;
+ctx.strokeStyle='white';
+ctx.beginPath();
+ctx.moveTo(left,yPos);
+ctx.lineTo(right,yPos);
+ctx.stroke();
 
-                            return `${nome} | Qtd: ${qtd} | ${valor.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}`;
-                        }
-                    }
-                }
-            }
-        }
-    });
+meses.forEach((m,i)=>{
+
+let xPos=x.getPixelForValue(i);
+
+ctx.beginPath();
+ctx.arc(xPos,yPos,5,0,Math.PI*2);
+ctx.fillStyle='yellow';
+ctx.fill();
+
+ctx.fillStyle='white';
+ctx.font='10px Arial';
+
+ctx.fillText(perc[i].toFixed(0)+'%',xPos,yPos+15);
+ctx.fillText(f(lucro[i]),xPos,yPos+28);
+
+});
+}
+}
+
+]
+});
+
+// ===== PIZZA =====
+const labels=Object.keys(mapPizza);
+const dados=labels.map(l=>mapPizza[l].qtd);
+
+new Chart(document.getElementById("graficoPizza"),{
+type:'pie',
+data:{
+labels:labels,
+datasets:[{
+data:dados,
+backgroundColor:labels.map((_,i)=>`hsl(${i*60},70%,60%)`)
+}]
+},
+options:{
+plugins:{
+legend:{position:'bottom',labels:{color:'white'}},
+tooltip:{
+callbacks:{
+label:(ctx)=>{
+let nome=ctx.label;
+let qtd=mapPizza[nome].qtd;
+let valor=mapPizza[nome].valor;
+return `${nome} | Qtd: ${qtd} | ${f(valor)}`;
+}
+}
+}
+}
+}
+});
 
 });
 
