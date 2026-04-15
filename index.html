@@ -91,16 +91,57 @@
 
 <script>
 
+// 🔗 LINK DA PLANILHA
 const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&single=true&output=csv";
 
-// 🔥 FUNÇÃO CORRETA PARA NÚMERO BR
+// ✅ PARSER CSV CORRETO (resolve vírgula em valores)
+function parseCSV(texto) {
+    const linhas = [];
+    let linha = [];
+    let valor = '';
+    let dentroAspas = false;
+
+    for (let i = 0; i < texto.length; i++) {
+        const char = texto[i];
+
+        if (char === '"') {
+            dentroAspas = !dentroAspas;
+        } 
+        else if (char === ',' && !dentroAspas) {
+            linha.push(valor);
+            valor = '';
+        } 
+        else if ((char === '\n' || char === '\r') && !dentroAspas) {
+            if (valor !== '' || linha.length > 0) {
+                linha.push(valor);
+                linhas.push(linha);
+                linha = [];
+                valor = '';
+            }
+        } 
+        else {
+            valor += char;
+        }
+    }
+
+    if (valor !== '' || linha.length > 0) {
+        linha.push(valor);
+        linhas.push(linha);
+    }
+
+    return linhas;
+}
+
+// ✅ CONVERSÃO CORRETA DE NÚMERO BR
 function parseBR(valor) {
     if (!valor) return 0;
 
     return parseFloat(
         valor
             .replace(/\./g, '') // remove milhar
-            .replace(',', '.')  // troca decimal
+            .replace(',', '.')  // decimal
+            .replace(/"/g, '')  // remove aspas
+            .trim()
     ) || 0;
 }
 
@@ -108,7 +149,7 @@ fetch(url)
 .then(response => response.text())
 .then(data => {
 
-    const linhas = data.split("\n").map(l => l.split(","));
+    const linhas = parseCSV(data);
 
     // DATA
     document.getElementById("dataAtualizacao").innerText = linhas[1][0];
@@ -125,8 +166,8 @@ fetch(url)
     let custo = 0;
 
     linhas.slice(1).forEach(l => {
-        receita += parseBR(l[26]); // AA
-        custo += parseBR(l[29]);   // AD
+        receita += parseBR(l[26]); // Coluna AA
+        custo += parseBR(l[29]);   // Coluna AD
     });
 
     const resultado = receita - custo;
@@ -141,6 +182,7 @@ fetch(url)
 })
 .catch(error => {
     console.error("Erro:", error);
+    document.getElementById("dataAtualizacao").innerText = "Erro ao carregar";
 });
 
 </script>
