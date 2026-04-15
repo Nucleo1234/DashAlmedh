@@ -93,50 +93,35 @@
 
 const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&single=true&output=csv";
 
-// ✅ NOVA FUNÇÃO DE PARSE (RESOLVE VÍRGULA EM VALORES)
-function parseCSV(text) {
-    const linhas = text.split(/\r?\n/);
-    return linhas.map(linha => {
-        const resultado = [];
-        let atual = '';
-        let dentroAspas = false;
-
-        for (let i = 0; i < linha.length; i++) {
-            const char = linha[i];
-
-            if (char === '"') {
-                dentroAspas = !dentroAspas;
-            } else if (char === ',' && !dentroAspas) {
-                resultado.push(atual);
-                atual = '';
-            } else {
-                atual += char;
-            }
-        }
-        resultado.push(atual);
-        return resultado;
-    });
-}
-
-// Converter número BR
-function parseBR(valor) {
+// 🔥 Função MELHORADA (trata vírgula sem quebrar CSV)
+function parseNumeroSeguro(valor) {
     if (!valor) return 0;
-    return parseFloat(
-        valor.replace(/\./g, '')
-             .replace(',', '.')
-    ) || 0;
+
+    valor = valor.replace(/"/g, '').trim();
+
+    // Caso venha como 1.234,56
+    if (valor.includes(',') && valor.includes('.')) {
+        valor = valor.replace(/\./g, '').replace(',', '.');
+    } 
+    // Caso venha como 1234,56
+    else if (valor.includes(',')) {
+        valor = valor.replace(',', '.');
+    }
+
+    return parseFloat(valor) || 0;
 }
 
 fetch(url)
 .then(response => response.text())
 .then(data => {
 
-    const linhas = parseCSV(data);
+    // 🔥 Mantém método simples (que já funcionava)
+    const linhas = data.split("\n").map(l => l.split(","));
 
     // DATA
     document.getElementById("dataAtualizacao").innerText = linhas[1][0];
 
-    // TOTAL DE CIRURGIAS (SEM DUPLICAR VALE)
+    // TOTAL CIRURGIAS
     const vales = linhas.slice(1)
         .map(l => l[2])
         .filter(v => v && v.trim() !== "");
@@ -144,13 +129,12 @@ fetch(url)
     const totalCirurgias = [...new Set(vales)].length;
     document.getElementById("totalCirurgias").innerText = totalCirurgias;
 
-    // RECEITA E CUSTO (SOMA NORMAL)
     let receita = 0;
     let custo = 0;
 
     linhas.slice(1).forEach(l => {
-        receita += parseBR(l[26]); // AA
-        custo += parseBR(l[29]);   // AD
+        receita += parseNumeroSeguro(l[26]);
+        custo += parseNumeroSeguro(l[29]);
     });
 
     const resultado = receita - custo;
