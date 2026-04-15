@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Dashboard - Indicadores</title>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <style>
     body {
@@ -24,7 +24,6 @@
         font-size: 24px;
         font-weight: bold;
         margin-top: 40px;
-        color: black;
     }
 
     .container-cards {
@@ -44,15 +43,9 @@
         box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
     }
 
-    .card h3 {
-        margin: 0;
-        font-size: 14px;
-    }
-
     .card p {
         font-size: 20px;
         font-weight: bold;
-        margin-top: 10px;
     }
 
     .grafico-container {
@@ -73,7 +66,6 @@
 </div>
 
 <div class="container-cards">
-    
     <div class="card">
         <h3>Total de Cirurgias</h3>
         <p id="totalCirurgias">...</p>
@@ -93,10 +85,8 @@
         <h3>Resultado Bruto R$</h3>
         <p id="resultado">...</p>
     </div>
-
 </div>
 
-<!-- GRÁFICO -->
 <div class="grafico-container">
     <canvas id="graficoMensal"></canvas>
 </div>
@@ -107,31 +97,25 @@ const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_
 
 function parseCSV(texto) {
     const linhas = [];
-    let linha = [];
-    let valor = '';
-    let dentroAspas = false;
+    let linha = [], valor = '', dentroAspas = false;
 
-    for (let i = 0; i < texto.length; i++) {
-        const char = texto[i];
-
+    for (let char of texto) {
         if (char === '"') dentroAspas = !dentroAspas;
         else if (char === ',' && !dentroAspas) {
             linha.push(valor);
             valor = '';
         }
         else if ((char === '\n' || char === '\r') && !dentroAspas) {
-            if (valor !== '' || linha.length > 0) {
+            if (valor || linha.length) {
                 linha.push(valor);
                 linhas.push(linha);
                 linha = [];
                 valor = '';
             }
-        } else {
-            valor += char;
-        }
+        } else valor += char;
     }
 
-    if (valor !== '' || linha.length > 0) {
+    if (valor || linha.length) {
         linha.push(valor);
         linhas.push(linha);
     }
@@ -139,46 +123,37 @@ function parseCSV(texto) {
     return linhas;
 }
 
-function parseBR(valor) {
-    if (!valor) return 0;
-
-    return parseFloat(
-        valor.replace(/\./g, '')
-             .replace(',', '.')
-             .replace(/"/g, '')
-             .trim()
-    ) || 0;
+function parseBR(v) {
+    if (!v) return 0;
+    return parseFloat(v.replace(/\./g,'').replace(',','.')) || 0;
 }
 
 function getMesAno(data) {
-    if (!data) return "";
-    const partes = data.split("/");
-    return partes[1] + "/" + partes[2].slice(-2);
+    if (!data || !data.includes("/")) return "";
+    const p = data.split("/");
+    return p[1] + "/" + p[2].slice(-2);
 }
 
 fetch(url)
-.then(response => response.text())
+.then(r => r.text())
 .then(data => {
 
     const linhas = parseCSV(data);
 
     document.getElementById("dataAtualizacao").innerText = linhas[1][0];
 
-    const vales = linhas.slice(1)
-        .map(l => l[2])
-        .filter(v => v && v.trim() !== "");
+    const vales = linhas.slice(1).map(l => l[2]).filter(v => v);
+    document.getElementById("totalCirurgias").innerText = [...new Set(vales)].length;
 
-    const totalCirurgias = [...new Set(vales)].length;
-
-    let receitaTotal = 0;
-    let custoTotal = 0;
-
-    const dadosMensais = {};
+    let receitaTotal = 0, custoTotal = 0;
+    const mesesMap = {};
 
     linhas.slice(1).forEach(l => {
 
-        const data = l[0];
-        const mes = getMesAno(data);
+        const dataCirurgia = l[5]; // 🔥 COLUNA F
+        const mes = getMesAno(dataCirurgia);
+
+        if (!mes) return;
 
         const receita = parseBR(l[26]);
         const custo = parseBR(l[29]);
@@ -186,29 +161,29 @@ fetch(url)
         receitaTotal += receita;
         custoTotal += custo;
 
-        if (!dadosMensais[mes]) {
-            dadosMensais[mes] = { receita: 0, custo: 0 };
+        if (!mesesMap[mes]) {
+            mesesMap[mes] = { receita: 0, custo: 0 };
         }
 
-        dadosMensais[mes].receita += receita;
-        dadosMensais[mes].custo += custo;
+        mesesMap[mes].receita += receita;
+        mesesMap[mes].custo += custo;
     });
 
     const resultado = receitaTotal - custoTotal;
 
-    const formatar = v =>
-        v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const formatar = v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 
-    document.getElementById("totalCirurgias").innerText = totalCirurgias;
     document.getElementById("receita").innerText = formatar(receitaTotal);
     document.getElementById("custo").innerText = formatar(custoTotal);
     document.getElementById("resultado").innerText = formatar(resultado);
 
-    const meses = Object.keys(dadosMensais).sort();
-    const receitas = meses.map(m => dadosMensais[m].receita);
-    const custos = meses.map(m => dadosMensais[m].custo);
+    const meses = Object.keys(mesesMap).sort();
+    const receitas = meses.map(m => mesesMap[m].receita);
+    const custos = meses.map(m => mesesMap[m].custo);
 
-    new Chart(document.getElementById("graficoMensal"), {
+    const ctx = document.getElementById("graficoMensal");
+
+    new Chart(ctx, {
         type: 'bar',
         data: {
             labels: meses,
@@ -226,32 +201,19 @@ fetch(url)
             ]
         },
         options: {
-            responsive: true,
             plugins: {
-                legend: {
-                    position: 'top'
-                },
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
-                            return context.dataset.label + ': ' +
-                                context.raw.toLocaleString("pt-BR", {
-                                    style: "currency",
-                                    currency: "BRL"
-                                });
-                        }
+                        label: ctx =>
+                            ctx.dataset.label + ": " +
+                            ctx.raw.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
                     }
                 }
             },
             scales: {
                 y: {
                     ticks: {
-                        callback: function(value) {
-                            return value.toLocaleString("pt-BR", {
-                                style: "currency",
-                                currency: "BRL"
-                            });
-                        }
+                        callback: v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
                     }
                 }
             }
@@ -259,9 +221,7 @@ fetch(url)
     });
 
 })
-.catch(error => {
-    console.error("Erro:", error);
-});
+.catch(err => console.error(err));
 
 </script>
 
