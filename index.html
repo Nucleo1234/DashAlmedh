@@ -91,40 +91,26 @@
 
 <script>
 
-const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&single=true&output=csv";
+const url = "https://opensheet.elk.sh/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/1391018010";
 
-// 🔥 Função MELHORADA (trata vírgula sem quebrar CSV)
-function parseNumeroSeguro(valor) {
+function parseBR(valor) {
     if (!valor) return 0;
-
-    valor = valor.replace(/"/g, '').trim();
-
-    // Caso venha como 1.234,56
-    if (valor.includes(',') && valor.includes('.')) {
-        valor = valor.replace(/\./g, '').replace(',', '.');
-    } 
-    // Caso venha como 1234,56
-    else if (valor.includes(',')) {
-        valor = valor.replace(',', '.');
-    }
-
-    return parseFloat(valor) || 0;
+    return parseFloat(
+        valor.replace(/\./g, '').replace(',', '.')
+    ) || 0;
 }
 
 fetch(url)
-.then(response => response.text())
-.then(data => {
+.then(res => res.json())
+.then(dados => {
 
-    // 🔥 Mantém método simples (que já funcionava)
-    const linhas = data.split("\n").map(l => l.split(","));
+    // DATA (primeira linha coluna A)
+    document.getElementById("dataAtualizacao").innerText = dados[0]["Data"] || "-";
 
-    // DATA
-    document.getElementById("dataAtualizacao").innerText = linhas[1][0];
-
-    // TOTAL CIRURGIAS
-    const vales = linhas.slice(1)
-        .map(l => l[2])
-        .filter(v => v && v.trim() !== "");
+    // TOTAL CIRURGIAS (VALE único)
+    const vales = dados
+        .map(l => l["Vale"])
+        .filter(v => v);
 
     const totalCirurgias = [...new Set(vales)].length;
     document.getElementById("totalCirurgias").innerText = totalCirurgias;
@@ -132,23 +118,23 @@ fetch(url)
     let receita = 0;
     let custo = 0;
 
-    linhas.slice(1).forEach(l => {
-        receita += parseNumeroSeguro(l[26]);
-        custo += parseNumeroSeguro(l[29]);
+    dados.forEach(l => {
+        receita += parseBR(l["Valor Total"]);
+        custo += parseBR(l["Custo Medio Total"]);
     });
 
     const resultado = receita - custo;
 
-    const formatar = (valor) =>
-        valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const formatar = (v) =>
+        v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
     document.getElementById("receita").innerText = formatar(receita);
     document.getElementById("custo").innerText = formatar(custo);
     document.getElementById("resultado").innerText = formatar(resultado);
 
 })
-.catch(error => {
-    console.error("Erro:", error);
+.catch(err => {
+    console.error(err);
 });
 
 </script>
