@@ -4,50 +4,46 @@
 <meta charset="UTF-8">
 <title>Dashboard - Indicadores</title>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body {
-    font-family: Arial;
-    background-color: #cfe8ff;
-    padding: 20px;
-}
+body { font-family: Arial; background:#cfe8ff; padding:20px; }
 
-.topo { font-size: 13px; font-weight: bold; }
+.topo { font-size:13px; font-weight:bold; }
 
 .titulo {
-    text-align: center;
-    font-size: 22px;
-    font-weight: bold;
-    margin-top: 30px;
+    text-align:center;
+    font-size:22px;
+    font-weight:bold;
+    margin-top:30px;
 }
 
 .container-cards {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 30px;
+    display:flex;
+    justify-content:center;
+    gap:15px;
+    margin-top:30px;
 }
 
 .card {
-    width: 150px;
-    background: white;
-    padding: 10px;
-    border-radius: 10px;
-    text-align: center;
+    width:150px;
+    background:white;
+    padding:10px;
+    border-radius:10px;
+    text-align:center;
 }
 
-.card h3 { font-size: 12px; margin: 0; }
-.card p { font-size: 16px; font-weight: bold; }
+.card h3 { font-size:12px; margin:0; }
+.card p { font-size:16px; font-weight:bold; }
 
 .grafico-container,
 .donut-container {
-    width: 80%;
-    height: 400px;
-    margin-top: 40px;
-    background-color: #0f3b4c;
-    padding: 20px;
-    border-radius: 10px;
+    width:80%;
+    height:400px;
+    margin-top:40px;
+    background:#0f3b4c;
+    padding:20px;
+    border-radius:10px;
 }
 </style>
 </head>
@@ -55,24 +51,24 @@ body {
 <body>
 
 <div class="topo">
-    Data de Atualização: <span id="dataAtualizacao">...</span>
+Data de Atualização: <span id="dataAtualizacao">...</span>
 </div>
 
 <div class="titulo">Indicadores de Performance</div>
 
 <div class="container-cards">
-    <div class="card"><h3>Total de Cirurgias</h3><p id="totalCirurgias">...</p></div>
-    <div class="card"><h3>Receita Bruta R$</h3><p id="receita">...</p></div>
-    <div class="card"><h3>Custo R$</h3><p id="custo">...</p></div>
-    <div class="card"><h3>Resultado Bruto R$</h3><p id="resultado">...</p></div>
+<div class="card"><h3>Total de Cirurgias</h3><p id="totalCirurgias">...</p></div>
+<div class="card"><h3>Receita Bruta R$</h3><p id="receita">...</p></div>
+<div class="card"><h3>Custo R$</h3><p id="custo">...</p></div>
+<div class="card"><h3>Resultado Bruto R$</h3><p id="resultado">...</p></div>
 </div>
 
 <div class="grafico-container">
-    <canvas id="graficoMensal"></canvas>
+<canvas id="graficoMensal"></canvas>
 </div>
 
 <div class="donut-container">
-    <canvas id="graficoDonut"></canvas>
+<canvas id="graficoDonut"></canvas>
 </div>
 
 <script>
@@ -120,13 +116,12 @@ linhas.slice(1).forEach(l=>{
     let situacao=l[4];
     let mes=mesAno(l[5]);
 
-    let rec=br(l[27]); // AB
+    let rec=br(l[27]);
     let cus=br(l[29]);
 
     recT+=rec;
     cusT+=cus;
 
-    // MENSAL
     if(mes){
         if(!map[mes]) map[mes]={rec:0,cus:0};
         map[mes].rec+=rec;
@@ -153,20 +148,11 @@ document.getElementById("receita").innerText=f(recT);
 document.getElementById("custo").innerText=f(cusT);
 document.getElementById("resultado").innerText=f(recT-cusT);
 
-// ===== GRAFICO MENSAL (INALTERADO) =====
-const meses=Object.keys(map).sort((a,b)=>{
-    let [m1,y1]=a.split('/');
-    let [m2,y2]=b.split('/');
-    return new Date(`20${y1}`,m1-1)-new Date(`20${y2}`,m2-1);
-});
+// ===== GRÁFICO MENSAL (SEU ORIGINAL) =====
+const meses=Object.keys(map);
 
 const rec=meses.map(m=>map[m].rec);
 const cus=meses.map(m=>map[m].cus);
-const lucro=meses.map(m=>map[m].rec-map[m].cus);
-const perc=meses.map(m=>{
-    let l=map[m].rec-map[m].cus;
-    return map[m].cus ? (l/map[m].cus)*100 : 0;
-});
 
 new Chart(document.getElementById("graficoMensal"),{
 type:'bar',
@@ -185,82 +171,24 @@ scales:{
 x:{ticks:{color:'white'}},
 y:{ticks:{color:'white'}}
 }
-},
-plugins:[
-{
-id:'labelsBarras',
-afterDatasetsDraw(chart){
-const {ctx}=chart;
-chart.data.datasets.forEach((dataset,i)=>{
-const meta=chart.getDatasetMeta(i);
-meta.data.forEach((bar,index)=>{
-const valor=dataset.data[index];
-ctx.fillStyle='white';
-ctx.font='10px Arial';
-ctx.textAlign='center';
-ctx.fillText(
-valor.toLocaleString("pt-BR",{style:"currency",currency:"BRL"}),
-bar.x,
-bar.y-5
-);
-});
-});
 }
-},
-{
-id:'linhaTopo',
-afterDraw(chart){
-const {ctx,chartArea:{left,right},scales:{x,y}}=chart;
-const max=Math.max(...rec,...cus);
-const yPos=y.getPixelForValue(max*1.15);
-
-ctx.strokeStyle='white';
-ctx.lineWidth=2;
-ctx.beginPath();
-ctx.moveTo(left,yPos);
-ctx.lineTo(right,yPos);
-ctx.stroke();
-
-meses.forEach((m,i)=>{
-const xPos=x.getPixelForValue(i);
-
-ctx.beginPath();
-ctx.arc(xPos,yPos,5,0,Math.PI*2);
-ctx.fillStyle='yellow';
-ctx.fill();
-
-ctx.fillStyle='white';
-ctx.font='10px Arial';
-
-ctx.fillText(perc[i].toFixed(0)+'%', xPos, yPos+15);
-ctx.fillText(f(lucro[i]), xPos, yPos+28);
-});
-}
-}
-]
 });
 
-// ===== DONUT AJUSTADO =====
-
+// ===== DONUT =====
 function cor(label){
     if(label.includes("70")) return "#4CAF50";
     if(label.includes("50")) return "#FFD966";
     if(label.includes("40")) return "#ff7b7b";
-    return `hsl(${Math.random()*360},70%,60%)`;
+    return "#999";
 }
 
 const labels=Object.keys(mapPizza);
 const dados=labels.map(l=>mapPizza[l].qtd);
-const total=dados.reduce((a,b)=>a+b,0);
-
-const legenda=labels.map(l=>
-`${l} | Qtd ${mapPizza[l].qtd} | ${f(mapPizza[l].valor)}`
-);
 
 new Chart(document.getElementById("graficoDonut"),{
 type:'doughnut',
 data:{
-labels:legenda,
+labels:labels.map(l=>`${l} | Qtd ${mapPizza[l].qtd} | ${f(mapPizza[l].valor)}`),
 datasets:[{
 data:dados,
 backgroundColor:labels.map(l=>cor(l))
@@ -270,41 +198,10 @@ options:{
 plugins:{
 legend:{
 position:'bottom',
-labels:{
-color:'white',
-boxWidth:15,
-padding:15
-}
-},
-tooltip:{
-callbacks:{
-label:(ctx)=>{
-let nome=labels[ctx.dataIndex];
-return `${nome} | Qtd ${mapPizza[nome].qtd} | ${f(mapPizza[nome].valor)}`;
+labels:{color:'white'}
 }
 }
 }
-}
-}
-},
-plugins:[{
-id:'percentual',
-afterDraw(chart){
-
-const {ctx}=chart;
-
-chart.data.datasets[0].data.forEach((valor,i)=>{
-let meta=chart.getDatasetMeta(0).data[i];
-let p=((valor/total)*100).toFixed(0);
-
-ctx.fillStyle='black';
-ctx.font='bold 12px Arial';
-ctx.textAlign='center';
-
-ctx.fillText(`${p}%`, meta.x, meta.y);
-});
-}
-}]
 });
 
 });
