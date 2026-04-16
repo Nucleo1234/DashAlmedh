@@ -45,11 +45,16 @@ body { font-family: Arial; background:#cfe8ff; padding:20px; }
     border-radius:10px;
 }
 
-/* layout donut + legenda */
+/* 🔥 ajuste aqui */
 .donut-flex {
     display:flex;
     justify-content:space-between;
     align-items:center;
+}
+
+.donut-chart {
+    width:250px !important;
+    height:250px !important;
 }
 
 .legenda {
@@ -92,7 +97,7 @@ Data de Atualização: <span id="dataAtualizacao">...</span>
 
 <div class="donut-container">
     <div class="donut-flex">
-        <canvas id="graficoDonut" style="width:50%;"></canvas>
+        <canvas id="graficoDonut" class="donut-chart"></canvas>
         <div id="legendaCustom" class="legenda"></div>
     </div>
 </div>
@@ -154,7 +159,6 @@ linhas.slice(1).forEach(l=>{
         map[mes].cus+=cus;
     }
 
-    // donut
     if(!mapPizza[situacao]){
         mapPizza[situacao]={qtd:0,valor:0,vales:{}};
     }
@@ -174,7 +178,7 @@ document.getElementById("receita").innerText=f(recT);
 document.getElementById("custo").innerText=f(cusT);
 document.getElementById("resultado").innerText=f(recT-cusT);
 
-// ===== MENSAL ORIGINAL =====
+// ===== GRAFICO MENSAL =====
 const meses=Object.keys(map).sort((a,b)=>{
 let [m1,y1]=a.split('/');
 let [m2,y2]=b.split('/');
@@ -297,7 +301,7 @@ ctx.fillText(p+'%', meta.x, meta.y);
 }]
 });
 
-// ===== LEGENDA DIREITA =====
+// ===== LEGENDA =====
 const legendaDiv=document.getElementById("legendaCustom");
 
 labels.forEach(l=>{
