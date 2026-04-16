@@ -36,30 +36,34 @@ body { font-family: Arial; background:#cfe8ff; padding:20px; }
 .card h3 { font-size:12px; margin:0; }
 .card p { font-size:16px; font-weight:bold; }
 
-.grafico-container,
-.donut-container {
-    width:80%;
+.grafico-container {
+    width:90%; /* 🔥 AUMENTEI */
+    height:500px; /* 🔥 AUMENTEI */
     margin-top:40px;
     background:#0f3b4c;
     padding:20px;
     border-radius:10px;
 }
 
-/* 🔥 ajuste aqui */
-.donut-flex {
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
+.donut-container {
+    width:90%;
+    margin-top:40px;
+    background:#0f3b4c;
+    padding:20px;
+    border-radius:10px;
 }
 
+/* donut menor */
 .donut-chart {
     width:250px !important;
     height:250px !important;
 }
 
+/* legenda embaixo à esquerda */
 .legenda {
     color:white;
     font-size:12px;
+    margin-top:20px;
 }
 
 .legenda-item {
@@ -96,10 +100,10 @@ Data de Atualização: <span id="dataAtualizacao">...</span>
 </div>
 
 <div class="donut-container">
-    <div class="donut-flex">
-        <canvas id="graficoDonut" class="donut-chart"></canvas>
-        <div id="legendaCustom" class="legenda"></div>
-    </div>
+    <canvas id="graficoDonut" class="donut-chart"></canvas>
+
+    <!-- 🔥 legenda embaixo à esquerda -->
+    <div id="legendaCustom" class="legenda"></div>
 </div>
 
 <script>
@@ -178,7 +182,7 @@ document.getElementById("receita").innerText=f(recT);
 document.getElementById("custo").innerText=f(cusT);
 document.getElementById("resultado").innerText=f(recT-cusT);
 
-// ===== GRAFICO MENSAL =====
+// ===== MENSAL =====
 const meses=Object.keys(map).sort((a,b)=>{
 let [m1,y1]=a.split('/');
 let [m2,y2]=b.split('/');
@@ -280,18 +284,14 @@ data:dados,
 backgroundColor:labels.map(l=>cor(l))
 }]
 },
-options:{
-plugins:{legend:{display:false}}
-},
+options:{plugins:{legend:{display:false}}},
 plugins:[{
 id:'percent',
 afterDraw(chart){
 const {ctx}=chart;
-
 chart.data.datasets[0].data.forEach((v,i)=>{
 let meta=chart.getDatasetMeta(0).data[i];
 let p=((v/total)*100).toFixed(0);
-
 ctx.fillStyle='black';
 ctx.font='bold 12px Arial';
 ctx.textAlign='center';
@@ -301,7 +301,7 @@ ctx.fillText(p+'%', meta.x, meta.y);
 }]
 });
 
-// ===== LEGENDA =====
+// legenda
 const legendaDiv=document.getElementById("legendaCustom");
 
 labels.forEach(l=>{
