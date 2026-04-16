@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Dashboard - Indicadores</title>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <style>
 body { font-family: Arial; background:#cfe8ff; padding:20px; }
@@ -39,11 +39,34 @@ body { font-family: Arial; background:#cfe8ff; padding:20px; }
 .grafico-container,
 .donut-container {
     width:80%;
-    height:400px;
     margin-top:40px;
     background:#0f3b4c;
     padding:20px;
     border-radius:10px;
+}
+
+/* layout donut + legenda */
+.donut-flex {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.legenda {
+    color:white;
+    font-size:12px;
+}
+
+.legenda-item {
+    display:flex;
+    align-items:center;
+    margin-bottom:8px;
+}
+
+.cor-box {
+    width:12px;
+    height:12px;
+    margin-right:8px;
 }
 </style>
 </head>
@@ -68,7 +91,10 @@ Data de Atualização: <span id="dataAtualizacao">...</span>
 </div>
 
 <div class="donut-container">
-<canvas id="graficoDonut"></canvas>
+    <div class="donut-flex">
+        <canvas id="graficoDonut" style="width:50%;"></canvas>
+        <div id="legendaCustom" class="legenda"></div>
+    </div>
 </div>
 
 <script>
@@ -128,7 +154,7 @@ linhas.slice(1).forEach(l=>{
         map[mes].cus+=cus;
     }
 
-    // DONUT
+    // donut
     if(!mapPizza[situacao]){
         mapPizza[situacao]={qtd:0,valor:0,vales:{}};
     }
@@ -148,11 +174,20 @@ document.getElementById("receita").innerText=f(recT);
 document.getElementById("custo").innerText=f(cusT);
 document.getElementById("resultado").innerText=f(recT-cusT);
 
-// ===== GRÁFICO MENSAL (SEU ORIGINAL) =====
-const meses=Object.keys(map);
+// ===== MENSAL ORIGINAL =====
+const meses=Object.keys(map).sort((a,b)=>{
+let [m1,y1]=a.split('/');
+let [m2,y2]=b.split('/');
+return new Date(`20${y1}`,m1-1)-new Date(`20${y2}`,m2-1);
+});
 
 const rec=meses.map(m=>map[m].rec);
 const cus=meses.map(m=>map[m].cus);
+const lucro=meses.map(m=>map[m].rec-map[m].cus);
+const perc=meses.map(m=>{
+let l=map[m].rec-map[m].cus;
+return map[m].cus ? (l/map[m].cus)*100 : 0;
+});
 
 new Chart(document.getElementById("graficoMensal"),{
 type:'bar',
@@ -171,37 +206,110 @@ scales:{
 x:{ticks:{color:'white'}},
 y:{ticks:{color:'white'}}
 }
+},
+plugins:[
+{
+id:'labelsBarras',
+afterDatasetsDraw(chart){
+const {ctx}=chart;
+chart.data.datasets.forEach((dataset,i)=>{
+const meta=chart.getDatasetMeta(i);
+meta.data.forEach((bar,index)=>{
+const valor=dataset.data[index];
+ctx.fillStyle='white';
+ctx.font='10px Arial';
+ctx.textAlign='center';
+ctx.fillText(f(valor), bar.x, bar.y-5);
+});
+});
 }
+},
+{
+id:'linhaTopo',
+afterDraw(chart){
+const {ctx,chartArea:{left,right},scales:{x,y}}=chart;
+const max=Math.max(...rec,...cus);
+const yPos=y.getPixelForValue(max*1.15);
+
+ctx.strokeStyle='white';
+ctx.beginPath();
+ctx.moveTo(left,yPos);
+ctx.lineTo(right,yPos);
+ctx.stroke();
+
+meses.forEach((m,i)=>{
+const xPos=x.getPixelForValue(i);
+
+ctx.beginPath();
+ctx.arc(xPos,yPos,5,0,Math.PI*2);
+ctx.fillStyle='yellow';
+ctx.fill();
+
+ctx.fillStyle='white';
+ctx.font='10px Arial';
+ctx.fillText(perc[i].toFixed(0)+'%', xPos, yPos+15);
+ctx.fillText(f(lucro[i]), xPos, yPos+28);
+});
+}
+}
+]
 });
 
 // ===== DONUT =====
 function cor(label){
-    if(label.includes("70")) return "#4CAF50";
-    if(label.includes("50")) return "#FFD966";
-    if(label.includes("40")) return "#ff7b7b";
-    return "#999";
+if(label.includes("70")) return "#4CAF50";
+if(label.includes("50")) return "#FFD966";
+if(label.includes("40")) return "#ff7b7b";
+return "#999";
 }
 
 const labels=Object.keys(mapPizza);
 const dados=labels.map(l=>mapPizza[l].qtd);
+const total=dados.reduce((a,b)=>a+b,0);
 
 new Chart(document.getElementById("graficoDonut"),{
 type:'doughnut',
 data:{
-labels:labels.map(l=>`${l} | Qtd ${mapPizza[l].qtd} | ${f(mapPizza[l].valor)}`),
+labels:labels,
 datasets:[{
 data:dados,
 backgroundColor:labels.map(l=>cor(l))
 }]
 },
 options:{
-plugins:{
-legend:{
-position:'bottom',
-labels:{color:'white'}
+plugins:{legend:{display:false}}
+},
+plugins:[{
+id:'percent',
+afterDraw(chart){
+const {ctx}=chart;
+
+chart.data.datasets[0].data.forEach((v,i)=>{
+let meta=chart.getDatasetMeta(0).data[i];
+let p=((v/total)*100).toFixed(0);
+
+ctx.fillStyle='black';
+ctx.font='bold 12px Arial';
+ctx.textAlign='center';
+ctx.fillText(p+'%', meta.x, meta.y);
+});
 }
-}
-}
+}]
+});
+
+// ===== LEGENDA DIREITA =====
+const legendaDiv=document.getElementById("legendaCustom");
+
+labels.forEach(l=>{
+let div=document.createElement("div");
+div.className="legenda-item";
+
+div.innerHTML=`
+<div class="cor-box" style="background:${cor(l)}"></div>
+<div>${l} | Qtd ${mapPizza[l].qtd} | ${f(mapPizza[l].valor)}</div>
+`;
+
+legendaDiv.appendChild(div);
 });
 
 });
