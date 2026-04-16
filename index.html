@@ -225,11 +225,19 @@ document.getElementById("receita").innerText=f(recT);
 document.getElementById("custo").innerText=f(cusT);
 document.getElementById("resultado").innerText=f(recT-cusT);
 
-/* ===== GRÁFICO MENSAL ===== */
+/* ===== GRÁFICO MENSAL COMPLETO ===== */
 const meses=Object.keys(map).sort((a,b)=>{
 let [m1,y1]=a.split('/');
 let [m2,y2]=b.split('/');
 return new Date(`20${y1}`,m1-1)-new Date(`20${y2}`,m2-1);
+});
+
+const recArr=meses.map(m=>map[m].rec);
+const cusArr=meses.map(m=>map[m].cus);
+const lucroArr=meses.map(m=>map[m].rec-map[m].cus);
+const percArr=meses.map(m=>{
+let l=map[m].rec-map[m].cus;
+return map[m].cus ? (l/map[m].cus)*100 : 0;
 });
 
 new Chart(document.getElementById("graficoMensal"),{
@@ -237,12 +245,64 @@ type:'bar',
 data:{
 labels:meses,
 datasets:[
-{data:meses.map(m=>map[m].cus),backgroundColor:'#ff7b7b'},
-{data:meses.map(m=>map[m].rec),backgroundColor:'#4CAF50'}
+{data:cusArr,backgroundColor:'#ff7b7b'},
+{data:recArr,backgroundColor:'#4CAF50'}
 ]
 },
-options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-scales:{x:{ticks:{color:'white'}},y:{ticks:{color:'white'}}}}
+options:{
+responsive:true,
+maintainAspectRatio:false,
+plugins:{legend:{display:false}},
+scales:{
+x:{ticks:{color:'white'}},
+y:{ticks:{color:'white'}}
+}
+},
+plugins:[
+{
+id:'labelsBarras',
+afterDatasetsDraw(chart){
+const {ctx}=chart;
+chart.data.datasets.forEach((dataset,i)=>{
+const meta=chart.getDatasetMeta(i);
+meta.data.forEach((bar,index)=>{
+ctx.fillStyle='white';
+ctx.font='10px Arial';
+ctx.textAlign='center';
+ctx.fillText(f(dataset.data[index]), bar.x, bar.y-5);
+});
+});
+}
+},
+{
+id:'linhaTopo',
+afterDraw(chart){
+const {ctx,chartArea:{left,right},scales:{x,y}}=chart;
+const max=Math.max(...recArr,...cusArr);
+const yPos=y.getPixelForValue(max*1.15);
+
+ctx.strokeStyle='white';
+ctx.beginPath();
+ctx.moveTo(left,yPos);
+ctx.lineTo(right,yPos);
+ctx.stroke();
+
+meses.forEach((m,i)=>{
+const xPos=x.getPixelForValue(i);
+
+ctx.beginPath();
+ctx.arc(xPos,yPos,5,0,Math.PI*2);
+ctx.fillStyle='yellow';
+ctx.fill();
+
+ctx.fillStyle='white';
+ctx.font='10px Arial';
+ctx.fillText(percArr[i].toFixed(0)+'%', xPos, yPos+15);
+ctx.fillText(f(lucroArr[i]), xPos, yPos+28);
+});
+}
+}
+]
 });
 
 /* ===== DONUT ===== */
@@ -255,11 +315,25 @@ return "#999";
 
 const labels=Object.keys(mapPizza);
 const dados=labels.map(l=>mapPizza[l].qtd);
+const total=dados.reduce((a,b)=>a+b,0);
 
 new Chart(document.getElementById("graficoDonut"),{
 type:'doughnut',
 data:{labels:labels,datasets:[{data:dados,backgroundColor:labels.map(l=>cor(l))}]},
-options:{plugins:{legend:{display:false}}}
+options:{plugins:{legend:{display:false}}},
+plugins:[{
+id:'percent',
+afterDraw(chart){
+const {ctx}=chart;
+chart.data.datasets[0].data.forEach((v,i)=>{
+let meta=chart.getDatasetMeta(0).data[i];
+let p=((v/total)*100).toFixed(0);
+ctx.fillStyle='black';
+ctx.font='bold 12px Arial';
+ctx.fillText(p+'%', meta.x, meta.y);
+});
+}
+}]
 });
 
 /* ===== LEGENDA ===== */
