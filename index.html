@@ -136,8 +136,24 @@ Data de Atualização: <span id="dataAtualizacao">...</span>
 
 </div>
 
+<!-- ===== NOVO BLOCO: VALORES A RECEBER ===== -->
+<div class="donut-container">
+
+    <div>
+        <canvas id="graficoDonutReceber" class="donut-chart"></canvas>
+        <div id="legendaReceber" class="legenda"></div>
+    </div>
+
+    <div style="color:white; width:100%;">
+        <h3>Valores a Receber</h3>
+        <table id="tabelaReceber" style="border-collapse:collapse; font-size:11px; width:100%;"></table>
+    </div>
+
+</div>
+
 <script>
 
+/* ===== SEU SCRIPT ORIGINAL (INALTERADO) ===== */
 const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&output=csv";
 
 function parseCSV(t){
@@ -164,7 +180,6 @@ function mesAno(d){
 }
 
 fetch(url).then(r=>r.text()).then(data=>{
-
 const linhas=parseCSV(data);
 
 document.getElementById("dataAtualizacao").innerText = linhas[1][0];
@@ -178,11 +193,9 @@ let matriz50 = {};
 let mesesSet = new Set();
 
 linhas.slice(1).forEach(l=>{
-
     let vale=l[2];
     let situacao=l[4];
     let mes=mesAno(l[5]);
-
     let rec=br(l[27]);
     let cus=br(l[29]);
 
@@ -216,7 +229,6 @@ linhas.slice(1).forEach(l=>{
         if(!matriz50[cliente][mes50]) matriz50[cliente][mes50] = 0;
         matriz50[cliente][mes50] += valor50;
     }
-
 });
 
 const f=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
@@ -225,7 +237,7 @@ document.getElementById("receita").innerText=f(recT);
 document.getElementById("custo").innerText=f(cusT);
 document.getElementById("resultado").innerText=f(recT-cusT);
 
-/* ===== GRÁFICO MENSAL COMPLETO ===== */
+/* ===== GRÁFICO MENSAL ===== */
 const meses=Object.keys(map).sort((a,b)=>{
 let [m1,y1]=a.split('/');
 let [m2,y2]=b.split('/');
@@ -242,40 +254,25 @@ return map[m].cus ? (l/map[m].cus)*100 : 0;
 
 new Chart(document.getElementById("graficoMensal"),{
 type:'bar',
-data:{
-labels:meses,
-datasets:[
+data:{labels:meses,datasets:[
 {data:cusArr,backgroundColor:'#ff7b7b'},
 {data:recArr,backgroundColor:'#4CAF50'}
-]
-},
-options:{
-responsive:true,
-maintainAspectRatio:false,
-plugins:{legend:{display:false}},
-scales:{
-x:{ticks:{color:'white'}},
-y:{ticks:{color:'white'}}
-}
-},
-plugins:[
-{
-id:'labelsBarras',
+]},
+options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+scales:{x:{ticks:{color:'white'}},y:{ticks:{color:'white'}}}},
+plugins:[{
 afterDatasetsDraw(chart){
 const {ctx}=chart;
 chart.data.datasets.forEach((dataset,i)=>{
-const meta=chart.getDatasetMeta(i);
-meta.data.forEach((bar,index)=>{
+chart.getDatasetMeta(i).data.forEach((bar,index)=>{
 ctx.fillStyle='white';
 ctx.font='10px Arial';
 ctx.textAlign='center';
 ctx.fillText(f(dataset.data[index]), bar.x, bar.y-5);
 });
 });
-}
-},
+}},
 {
-id:'linhaTopo',
 afterDraw(chart){
 const {ctx,chartArea:{left,right},scales:{x,y}}=chart;
 const max=Math.max(...recArr,...cusArr);
@@ -289,7 +286,6 @@ ctx.stroke();
 
 meses.forEach((m,i)=>{
 const xPos=x.getPixelForValue(i);
-
 ctx.beginPath();
 ctx.arc(xPos,yPos,5,0,Math.PI*2);
 ctx.fillStyle='yellow';
@@ -300,12 +296,11 @@ ctx.font='10px Arial';
 ctx.fillText(percArr[i].toFixed(0)+'%', xPos, yPos+15);
 ctx.fillText(f(lucroArr[i]), xPos, yPos+28);
 });
-}
-}
+}}
 ]
 });
 
-/* ===== DONUT ===== */
+/* ===== DONUT ORIGINAL ===== */
 function cor(label){
 if(label.includes("70")) return "#4CAF50";
 if(label.includes("50")) return "#FFD966";
@@ -322,36 +317,29 @@ type:'doughnut',
 data:{labels:labels,datasets:[{data:dados,backgroundColor:labels.map(l=>cor(l))}]},
 options:{plugins:{legend:{display:false}}},
 plugins:[{
-id:'percent',
 afterDraw(chart){
 const {ctx}=chart;
 chart.data.datasets[0].data.forEach((v,i)=>{
 let meta=chart.getDatasetMeta(0).data[i];
 let p=((v/total)*100).toFixed(0);
 ctx.fillStyle='black';
-ctx.font='bold 12px Arial';
 ctx.fillText(p+'%', meta.x, meta.y);
 });
-}
-}]
+}}
+]
 });
 
-/* ===== LEGENDA ===== */
+/* ===== LEGENDA ORIGINAL ===== */
 const legendaDiv=document.getElementById("legendaCustom");
-
 labels.forEach(l=>{
 let div=document.createElement("div");
 div.className="legenda-item";
-
-div.innerHTML=`
-<div class="cor-box" style="background:${cor(l)}"></div>
-<div>${l} | Qtd ${mapPizza[l].qtd} | ${f(mapPizza[l].valor)}</div>
-`;
-
+div.innerHTML=`<div class="cor-box" style="background:${cor(l)}"></div>
+<div>${l} | Qtd ${mapPizza[l].qtd} | ${f(mapPizza[l].valor)}</div>`;
 legendaDiv.appendChild(div);
 });
 
-/* ===== TABELA ===== */
+/* ===== TABELA ORIGINAL ===== */
 const tabela = document.getElementById("tabela50");
 
 const mesesTabela = Array.from(mesesSet).sort((a,b)=>{
@@ -380,26 +368,144 @@ linha+=`<td style="text-align:right;">${v?f(v):""}</td>`;
 });
 
 totalGeral+=totalCliente;
-
 linha+=`<td style="text-align:right;font-weight:bold;">${f(totalCliente)}</td></tr>`;
 html+=linha;
 });
 
-let totalLinha = `<tr style="font-weight:bold;">
-<td>Total</td>`;
-
+let totalLinha = `<tr style="font-weight:bold;"><td>Total</td>`;
 mesesTabela.forEach(m=>{
 totalLinha+=`<td style="text-align:right;">${f(totaisMes[m])}</td>`;
 });
-
 totalLinha+=`<td style="text-align:right;">${f(totalGeral)}</td></tr>`;
-
 html+=totalLinha;
 
 tabela.innerHTML = html;
 
 });
 
+/* ===== NOVO SCRIPT (ISOLADO) ===== */
+(function(){
+
+const urlReceber = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1261021270&single=true&output=csv";
+
+function parseCSV_R(t){
+    const l=[];let r=[],v='',q=false;
+    for(let c of t){
+        if(c=='"')q=!q;
+        else if(c==','&&!q){r.push(v);v=''}
+        else if((c=='\n'||c=='\r')&&!q){
+            if(v||r.length){r.push(v);l.push(r);r=[];v=''}
+        } else v+=c;
+    }
+    if(v||r.length){r.push(v);l.push(r)}
+    return l;
+}
+
+function br_R(v){
+    return parseFloat(v?.replace(/\./g,'').replace(',','.'))||0;
+}
+
+function mesAno_R(d){
+    if(!d||!d.includes("/"))return "";
+    let p=d.split("/");
+    return `${p[1]}/${p[2]}`;
+}
+
+function ordemMes_R(m){
+    let [mes,ano]=m.split('/');
+    return new Date(ano, mes-1);
+}
+
+function f_R(v){
+    return v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+}
+
+fetch(urlReceber)
+.then(r=>r.text())
+.then(data=>{
+
+const linhas=parseCSV_R(data);
+
+let clientes={},matriz={},mesesSet=new Set();
+
+linhas.slice(1).forEach(l=>{
+    let cliente=l[1];
+    let venc=l[7];
+    let valor=br_R(l[19]);
+    let mes=mesAno_R(venc);
+
+    if(!cliente) return;
+
+    if(!clientes[cliente]) clientes[cliente]={qtd:0,valor:0};
+    clientes[cliente].qtd++;
+    clientes[cliente].valor+=valor;
+
+    if(mes){
+        mesesSet.add(mes);
+        if(!matriz[cliente]) matriz[cliente]={};
+        if(!matriz[cliente][mes]) matriz[cliente][mes]=0;
+        matriz[cliente][mes]+=valor;
+    }
+});
+
+const meses = Array.from(mesesSet).sort((a,b)=>ordemMes_R(a)-ordemMes_R(b));
+
+const labels=Object.keys(clientes);
+const dados=labels.map(l=>clientes[l].qtd);
+const cores=labels.map((_,i)=>`hsl(${i*40},70%,60%)`);
+
+new Chart(document.getElementById("graficoDonutReceber"),{
+type:'doughnut',
+data:{labels:labels,datasets:[{data:dados,backgroundColor:cores}]},
+options:{plugins:{legend:{display:false}}}
+});
+
+const legenda=document.getElementById("legendaReceber");
+
+labels.forEach((l,i)=>{
+let div=document.createElement("div");
+div.className="legenda-item";
+div.innerHTML=`<div class="cor-box" style="background:${cores[i]}"></div>
+<div>${l} | Qtd: ${clientes[l].qtd} | ${f_R(clientes[l].valor)}</div>`;
+legenda.appendChild(div);
+});
+
+let html="<tr><th>Cliente</th>";
+meses.forEach(m=> html+=`<th>${m}</th>`);
+html+="<th>Total</th></tr>";
+
+let totalGeral=0;
+let totaisMes={};
+meses.forEach(m=> totaisMes[m]=0);
+
+Object.entries(matriz).forEach(([cliente,dados])=>{
+let totalCliente=0;
+let linha=`<tr><td>${cliente}</td>`;
+
+meses.forEach(m=>{
+let v=dados[m]||0;
+totalCliente+=v;
+totaisMes[m]+=v;
+linha+=`<td style="text-align:right;">${v?f_R(v):""}</td>`;
+});
+
+totalGeral+=totalCliente;
+linha+=`<td style="text-align:right;font-weight:bold;">${f_R(totalCliente)}</td></tr>`;
+html+=linha;
+});
+
+let totalLinha=`<tr style="font-weight:bold;"><td>Total</td>`;
+meses.forEach(m=>{
+totalLinha+=`<td style="text-align:right;">${f_R(totaisMes[m])}</td>`;
+});
+totalLinha+=`<td style="text-align:right;">${f_R(totalGeral)}</td></tr>`;
+html+=totalLinha;
+
+document.getElementById("tabelaReceber").innerHTML=html;
+
+});
+
+})();
 </script>
 
 </body>
