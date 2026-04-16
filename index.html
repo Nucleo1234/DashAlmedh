@@ -11,7 +11,12 @@ body { font-family: Arial; background:#cfe8ff; padding:20px; }
 
 .topo { font-size:13px; font-weight:bold; }
 
-.titulo { text-align:center; font-size:22px; font-weight:bold; margin-top:30px; }
+.titulo {
+    text-align:center;
+    font-size:22px;
+    font-weight:bold;
+    margin-top:30px;
+}
 
 .container-cards {
     display:flex;
@@ -27,6 +32,9 @@ body { font-family: Arial; background:#cfe8ff; padding:20px; }
     border-radius:10px;
     text-align:center;
 }
+
+.card h3 { font-size:12px; margin:0; }
+.card p { font-size:16px; font-weight:bold; }
 
 .grafico-container {
     width:90%;
@@ -45,75 +53,93 @@ body { font-family: Arial; background:#cfe8ff; padding:20px; }
     border-radius:10px;
     display:flex;
     gap:30px;
+    align-items:flex-start;
 }
 
-.donut-chart { width:250px; }
+.donut-chart {
+    width:250px !important;
+    height:250px !important;
+}
 
-.legenda { color:white; font-size:12px; margin-top:20px; }
-
-table {
-    border-collapse:collapse;
-    width:100%;
-    font-size:11px;
+.legenda {
     color:white;
+    font-size:12px;
+    margin-top:20px;
 }
 
-th, td {
+.legenda-item {
+    display:flex;
+    align-items:center;
+    margin-bottom:8px;
+}
+
+.cor-box {
+    width:12px;
+    height:12px;
+    margin-right:8px;
+}
+
+/* ===== TABELA ===== */
+#tabelaMatriz {
+    color:white;
+    width:100%;
+    overflow:auto;
+}
+
+#tabela50 {
+    border-collapse:collapse;
+    font-size:11px;
+    width:100%;
+}
+
+#tabela50 th, #tabela50 td {
+    padding:6px 8px;
     border:1px solid rgba(255,255,255,0.3);
-    padding:6px;
 }
 
-h3 { color:white; }
-
+#tabela50 th {
+    background:rgba(255,255,255,0.1);
+}
 </style>
 </head>
 
 <body>
 
-<div class="topo">Data: <span id="dataAtualizacao"></span></div>
+<div class="topo">
+Data de Atualização: <span id="dataAtualizacao">...</span>
+</div>
 
 <div class="titulo">Indicadores de Performance</div>
 
 <div class="container-cards">
-<div class="card"><h3>Total Cirurgias</h3><p id="totalCirurgias"></p></div>
-<div class="card"><h3>Receita</h3><p id="receita"></p></div>
-<div class="card"><h3>Custo</h3><p id="custo"></p></div>
-<div class="card"><h3>Resultado</h3><p id="resultado"></p></div>
+<div class="card"><h3>Total de Cirurgias</h3><p id="totalCirurgias">...</p></div>
+<div class="card"><h3>Receita Bruta R$</h3><p id="receita">...</p></div>
+<div class="card"><h3>Custo R$</h3><p id="custo">...</p></div>
+<div class="card"><h3>Resultado Bruto R$</h3><p id="resultado">...</p></div>
 </div>
 
 <div class="grafico-container">
 <canvas id="graficoMensal"></canvas>
 </div>
 
-<!-- CIRURGIAS -->
 <div class="donut-container">
-<div>
-<canvas id="graficoDonut" class="donut-chart"></canvas>
-<div id="legendaCustom" class="legenda"></div>
-</div>
 
-<div>
-<h3>Cirurgias - Faturar</h3>
-<table id="tabela50"></table>
-</div>
-</div>
+    <div>
+        <canvas id="graficoDonut" class="donut-chart"></canvas>
+        <div id="legendaCustom" class="legenda"></div>
+    </div>
 
-<!-- PETROLEO -->
-<div class="donut-container">
-<div>
-<canvas id="graficoDonutPetroleo" class="donut-chart"></canvas>
-<div id="legendaPetroleo" class="legenda"></div>
-</div>
+    <div id="tabelaMatriz">
+        <h3>Cirurgias - Faturar</h3>
+        <table id="tabela50"></table>
+    </div>
 
-<div>
-<h3>Valores a Receber</h3>
-<table id="tabelaPetroleo"></table>
-</div>
 </div>
 
 <script>
 
-/* ===== FUNÇÕES ===== */
+const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&output=csv";
+
 function parseCSV(t){
     const l=[];let r=[],v='',q=false;
     for(let c of t){
@@ -127,14 +153,17 @@ function parseCSV(t){
     return l;
 }
 
-function br(v){ return parseFloat(v?.replace(/\./g,'').replace(',','.'))||0; }
-function f(v){ return v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"}); }
-function mesAno(d){ if(!d)return ""; let p=d.split("/"); return p[1]+"/"+p[2].slice(-2); }
+function br(v){
+    return parseFloat(v?.replace(/\./g,'').replace(',','.'))||0;
+}
 
-/* ================= PRINCIPAL ================= */
+function mesAno(d){
+    if(!d||!d.includes("/"))return "";
+    let p=d.split("/");
+    return p[1]+"/"+p[2].slice(-2);
+}
 
-fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&output=csv")
-.then(r=>r.text()).then(data=>{
+fetch(url).then(r=>r.text()).then(data=>{
 
 const linhas=parseCSV(data);
 
@@ -143,73 +172,104 @@ document.getElementById("dataAtualizacao").innerText = linhas[1][0];
 const vales = linhas.slice(1).map(l => l[2]).filter(v => v);
 document.getElementById("totalCirurgias").innerText = [...new Set(vales)].length;
 
-let map={},recT=0,cusT=0,mapPizza={},matriz50={},mesesSet=new Set();
+let map={},recT=0,cusT=0;
+let mapPizza={};
+let matriz50 = {};
+let mesesSet = new Set();
 
 linhas.slice(1).forEach(l=>{
 
-let vale=l[2],situ=l[4],mes=mesAno(l[5]);
-let rec=br(l[27]),cus=br(l[29]);
+    let vale=l[2];
+    let situacao=l[4];
+    let mes=mesAno(l[5]);
 
-recT+=rec; cusT+=cus;
+    let rec=br(l[27]);
+    let cus=br(l[29]);
 
-if(mes){
-if(!map[mes]) map[mes]={rec:0,cus:0};
-map[mes].rec+=rec; map[mes].cus+=cus;
-}
+    recT+=rec;
+    cusT+=cus;
 
-if(!mapPizza[situ]) mapPizza[situ]={qtd:0,valor:0,vales:{}};
-if(!mapPizza[situ].vales[vale]){
-mapPizza[situ].qtd++;
-mapPizza[situ].vales[vale]=true;
-}
-mapPizza[situ].valor+=rec;
+    if(mes){
+        if(!map[mes]) map[mes]={rec:0,cus:0};
+        map[mes].rec+=rec;
+        map[mes].cus+=cus;
+    }
 
-/* MATRIZ 50 */
-let cliente=l[8];
-if(situ?.includes("50") && cliente && mes){
-mesesSet.add(mes);
-if(!matriz50[cliente]) matriz50[cliente]={};
-matriz50[cliente][mes]=(matriz50[cliente][mes]||0)+rec;
-}
+    if(!mapPizza[situacao]){
+        mapPizza[situacao]={qtd:0,valor:0,vales:{}};
+    }
+
+    if(!mapPizza[situacao].vales[vale]){
+        mapPizza[situacao].qtd++;
+        mapPizza[situacao].vales[vale]=true;
+    }
+
+    mapPizza[situacao].valor+=rec;
+
+    let cliente = l[8];
+    let mes50 = mesAno(l[5]);
+    let valor50 = br(l[27]);
+
+    if(situacao && situacao.includes("50") && cliente && mes50){
+        mesesSet.add(mes50);
+        if(!matriz50[cliente]) matriz50[cliente] = {};
+        if(!matriz50[cliente][mes50]) matriz50[cliente][mes50] = 0;
+        matriz50[cliente][mes50] += valor50;
+    }
 
 });
 
-/* CARDS */
+const f=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+
 document.getElementById("receita").innerText=f(recT);
 document.getElementById("custo").innerText=f(cusT);
 document.getElementById("resultado").innerText=f(recT-cusT);
 
-/* ORDENAR MESES */
+/* ===== GRÁFICO MENSAL COMPLETO ===== */
 const meses=Object.keys(map).sort((a,b)=>{
-let [m1,y1]=a.split('/'),[m2,y2]=b.split('/');
+let [m1,y1]=a.split('/');
+let [m2,y2]=b.split('/');
 return new Date(`20${y1}`,m1-1)-new Date(`20${y2}`,m2-1);
 });
 
-/* GRÁFICO COMPLETO ORIGINAL */
 const recArr=meses.map(m=>map[m].rec);
 const cusArr=meses.map(m=>map[m].cus);
 const lucroArr=meses.map(m=>map[m].rec-map[m].cus);
-const percArr=meses.map(m=>map[m].cus ? ((map[m].rec-map[m].cus)/map[m].cus)*100 : 0);
+const percArr=meses.map(m=>{
+let l=map[m].rec-map[m].cus;
+return map[m].cus ? (l/map[m].cus)*100 : 0;
+});
 
-new Chart(graficoMensal,{
+new Chart(document.getElementById("graficoMensal"),{
 type:'bar',
-data:{labels:meses,datasets:[
+data:{
+labels:meses,
+datasets:[
 {data:cusArr,backgroundColor:'#ff7b7b'},
 {data:recArr,backgroundColor:'#4CAF50'}
-]},
+]
+},
 options:{
+responsive:true,
+maintainAspectRatio:false,
 plugins:{legend:{display:false}},
-scales:{x:{ticks:{color:'white'}},y:{ticks:{color:'white'}}}
+scales:{
+x:{ticks:{color:'white'}},
+y:{ticks:{color:'white'}}
+}
 },
 plugins:[
 {
-id:'labels',
-afterDatasetsDraw(c){
-const ctx=c.ctx;
-c.data.datasets.forEach((d,i)=>{
-c.getDatasetMeta(i).data.forEach((bar,j)=>{
+id:'labelsBarras',
+afterDatasetsDraw(chart){
+const {ctx}=chart;
+chart.data.datasets.forEach((dataset,i)=>{
+const meta=chart.getDatasetMeta(i);
+meta.data.forEach((bar,index)=>{
 ctx.fillStyle='white';
-ctx.fillText(f(d.data[j]),bar.x,bar.y-5);
+ctx.font='10px Arial';
+ctx.textAlign='center';
+ctx.fillText(f(dataset.data[index]), bar.x, bar.y-5);
 });
 });
 }
@@ -236,140 +296,107 @@ ctx.fillStyle='yellow';
 ctx.fill();
 
 ctx.fillStyle='white';
-ctx.fillText(percArr[i].toFixed(0)+'%',xPos,yPos+15);
-ctx.fillText(f(lucroArr[i]),xPos,yPos+28);
+ctx.font='10px Arial';
+ctx.fillText(percArr[i].toFixed(0)+'%', xPos, yPos+15);
+ctx.fillText(f(lucroArr[i]), xPos, yPos+28);
 });
 }
 }
 ]
 });
 
-/* DONUT + LEGENDA RESTAURADOS */
-function cor(l){
-if(l.includes("70")) return "#4CAF50";
-if(l.includes("50")) return "#FFD966";
-if(l.includes("40")) return "#ff7b7b";
+/* ===== DONUT ===== */
+function cor(label){
+if(label.includes("70")) return "#4CAF50";
+if(label.includes("50")) return "#FFD966";
+if(label.includes("40")) return "#ff7b7b";
 return "#999";
 }
 
 const labels=Object.keys(mapPizza);
+const dados=labels.map(l=>mapPizza[l].qtd);
+const total=dados.reduce((a,b)=>a+b,0);
 
-new Chart(graficoDonut,{
+new Chart(document.getElementById("graficoDonut"),{
 type:'doughnut',
-data:{
-labels:labels,
-datasets:[{
-data:labels.map(l=>mapPizza[l].qtd),
-backgroundColor:labels.map(l=>cor(l))
+data:{labels:labels,datasets:[{data:dados,backgroundColor:labels.map(l=>cor(l))}]},
+options:{plugins:{legend:{display:false}}},
+plugins:[{
+id:'percent',
+afterDraw(chart){
+const {ctx}=chart;
+chart.data.datasets[0].data.forEach((v,i)=>{
+let meta=chart.getDatasetMeta(0).data[i];
+let p=((v/total)*100).toFixed(0);
+ctx.fillStyle='black';
+ctx.font='bold 12px Arial';
+ctx.fillText(p+'%', meta.x, meta.y);
+});
+}
 }]
-},
-options:{plugins:{legend:{display:false}}}
 });
 
-/* LEGENDA BONITA */
+/* ===== LEGENDA ===== */
+const legendaDiv=document.getElementById("legendaCustom");
+
 labels.forEach(l=>{
 let div=document.createElement("div");
-div.innerHTML=`${l} | Qtd ${mapPizza[l].qtd} | ${f(mapPizza[l].valor)}`;
-legendaCustom.appendChild(div);
+div.className="legenda-item";
+
+div.innerHTML=`
+<div class="cor-box" style="background:${cor(l)}"></div>
+<div>${l} | Qtd ${mapPizza[l].qtd} | ${f(mapPizza[l].valor)}</div>
+`;
+
+legendaDiv.appendChild(div);
 });
 
-/* TABELA COM TOTAL */
-const mesesTabela=Array.from(mesesSet).sort((a,b)=>{
-let [m1,y1]=a.split('/'),[m2,y2]=b.split('/');
+/* ===== TABELA ===== */
+const tabela = document.getElementById("tabela50");
+
+const mesesTabela = Array.from(mesesSet).sort((a,b)=>{
+let [m1,y1]=a.split('/');
+let [m2,y2]=b.split('/');
 return new Date(`20${y1}`,m1-1)-new Date(`20${y2}`,m2-1);
 });
 
-let html="<tr><th>Cliente</th>";
-mesesTabela.forEach(m=>html+=`<th>${m}</th>`);
-html+="<th>Total</th></tr>";
+let html = "<tr><th>Cliente</th>";
+mesesTabela.forEach(m=> html += `<th>${m}</th>`);
+html += "<th>Total</th></tr>";
 
-let totalGeral=0,totMes={};
-mesesTabela.forEach(m=>totMes[m]=0);
+let totalGeral = 0;
+let totaisMes = {};
+mesesTabela.forEach(m => totaisMes[m]=0);
 
-Object.entries(matriz50).forEach(([c,d])=>{
-let total=0,row=`<tr><td>${c}</td>`;
+Object.entries(matriz50).forEach(([cliente,dados])=>{
+let linha = `<tr><td>${cliente}</td>`;
+let totalCliente = 0;
+
 mesesTabela.forEach(m=>{
-let v=d[m]||0; total+=v; totMes[m]+=v;
-row+=`<td>${v?f(v):""}</td>`;
-});
-totalGeral+=total;
-row+=`<td>${f(total)}</td></tr>`;
-html+=row;
+let v=dados[m]||0;
+totalCliente+=v;
+totaisMes[m]+=v;
+linha+=`<td style="text-align:right;">${v?f(v):""}</td>`;
 });
 
-html+=`<tr><td>Total</td>`;
-mesesTabela.forEach(m=>html+=`<td>${f(totMes[m])}</td>`);
-html+=`<td>${f(totalGeral)}</td></tr>`;
+totalGeral+=totalCliente;
 
-tabela50.innerHTML=html;
-
+linha+=`<td style="text-align:right;font-weight:bold;">${f(totalCliente)}</td></tr>`;
+html+=linha;
 });
 
-/* ================= PETROLEO ================= */
+let totalLinha = `<tr style="font-weight:bold;">
+<td>Total</td>`;
 
-fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1261021270&single=true&output=csv")
-.then(r=>r.text()).then(data=>{
-
-const linhas=parseCSV(data);
-
-let map={},matriz={},mesesSet=new Set();
-
-linhas.slice(1).forEach(l=>{
-let c=l[1],v=br(l[19]),mes=mesAno(l[7]);
-
-if(!map[c]) map[c]={qtd:0,valor:0};
-map[c].qtd++; map[c].valor+=v;
-
-if(mes){
-mesesSet.add(mes);
-if(!matriz[c]) matriz[c]={};
-matriz[c][mes]=(matriz[c][mes]||0)+v;
-}
+mesesTabela.forEach(m=>{
+totalLinha+=`<td style="text-align:right;">${f(totaisMes[m])}</td>`;
 });
 
-/* ORDENAR MESES */
-const meses=Array.from(mesesSet).sort((a,b)=>{
-let [m1,y1]=a.split('/'),[m2,y2]=b.split('/');
-return new Date(`20${y1}`,m1-1)-new Date(`20${y2}`,m2-1);
-});
+totalLinha+=`<td style="text-align:right;">${f(totalGeral)}</td></tr>`;
 
-/* DONUT */
-new Chart(graficoDonutPetroleo,{
-type:'doughnut',
-data:{labels:Object.keys(map),datasets:[{data:Object.values(map).map(x=>x.qtd)}]}
-});
+html+=totalLinha;
 
-/* LEGENDA */
-Object.keys(map).forEach(l=>{
-let div=document.createElement("div");
-div.innerHTML=`${l} | Qtd ${map[l].qtd} | ${f(map[l].valor)}`;
-legendaPetroleo.appendChild(div);
-});
-
-/* TABELA COM TOTAL */
-let html="<tr><th>Cliente</th>";
-meses.forEach(m=>html+=`<th>${m}</th>`);
-html+="<th>Total</th></tr>";
-
-let totalGeral=0,totMes={};
-meses.forEach(m=>totMes[m]=0);
-
-Object.entries(matriz).forEach(([c,d])=>{
-let total=0,row=`<tr><td>${c}</td>`;
-meses.forEach(m=>{
-let v=d[m]||0; total+=v; totMes[m]+=v;
-row+=`<td>${v?f(v):""}</td>`;
-});
-totalGeral+=total;
-row+=`<td>${f(total)}</td></tr>`;
-html+=row;
-});
-
-html+=`<tr><td>Total</td>`;
-meses.forEach(m=>html+=`<td>${f(totMes[m])}</td>`);
-html+=`<td>${f(totalGeral)}</td></tr>`;
-
-tabelaPetroleo.innerHTML=html;
+tabela.innerHTML = html;
 
 });
 
