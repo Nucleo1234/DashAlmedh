@@ -94,13 +94,12 @@ body { font-family: Arial; background:#cfe8ff; padding:20px; }
 
 #tabela50 th, #tabela50 td {
     padding:6px 8px;
-    border:1px solid rgba(255,255,255,0.3); /* 🔥 LINHAS VISÍVEIS */
+    border:1px solid rgba(255,255,255,0.3);
 }
 
 #tabela50 th {
     background:rgba(255,255,255,0.1);
 }
-
 </style>
 </head>
 
@@ -175,7 +174,6 @@ document.getElementById("totalCirurgias").innerText = [...new Set(vales)].length
 
 let map={},recT=0,cusT=0;
 let mapPizza={};
-
 let matriz50 = {};
 let mesesSet = new Set();
 
@@ -209,22 +207,13 @@ linhas.slice(1).forEach(l=>{
     mapPizza[situacao].valor+=rec;
 
     let cliente = l[8];
-    let dataCirurgia = l[5];
+    let mes50 = mesAno(l[5]);
     let valor50 = br(l[27]);
-    let mes50 = mesAno(dataCirurgia);
 
     if(situacao && situacao.includes("50") && cliente && mes50){
-
         mesesSet.add(mes50);
-
-        if(!matriz50[cliente]){
-            matriz50[cliente] = {};
-        }
-
-        if(!matriz50[cliente][mes50]){
-            matriz50[cliente][mes50] = 0;
-        }
-
+        if(!matriz50[cliente]) matriz50[cliente] = {};
+        if(!matriz50[cliente][mes50]) matriz50[cliente][mes50] = 0;
         matriz50[cliente][mes50] += valor50;
     }
 
@@ -235,6 +224,58 @@ const f=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 document.getElementById("receita").innerText=f(recT);
 document.getElementById("custo").innerText=f(cusT);
 document.getElementById("resultado").innerText=f(recT-cusT);
+
+/* ===== GRÁFICO MENSAL ===== */
+const meses=Object.keys(map).sort((a,b)=>{
+let [m1,y1]=a.split('/');
+let [m2,y2]=b.split('/');
+return new Date(`20${y1}`,m1-1)-new Date(`20${y2}`,m2-1);
+});
+
+new Chart(document.getElementById("graficoMensal"),{
+type:'bar',
+data:{
+labels:meses,
+datasets:[
+{data:meses.map(m=>map[m].cus),backgroundColor:'#ff7b7b'},
+{data:meses.map(m=>map[m].rec),backgroundColor:'#4CAF50'}
+]
+},
+options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+scales:{x:{ticks:{color:'white'}},y:{ticks:{color:'white'}}}}
+});
+
+/* ===== DONUT ===== */
+function cor(label){
+if(label.includes("70")) return "#4CAF50";
+if(label.includes("50")) return "#FFD966";
+if(label.includes("40")) return "#ff7b7b";
+return "#999";
+}
+
+const labels=Object.keys(mapPizza);
+const dados=labels.map(l=>mapPizza[l].qtd);
+
+new Chart(document.getElementById("graficoDonut"),{
+type:'doughnut',
+data:{labels:labels,datasets:[{data:dados,backgroundColor:labels.map(l=>cor(l))}]},
+options:{plugins:{legend:{display:false}}}
+});
+
+/* ===== LEGENDA ===== */
+const legendaDiv=document.getElementById("legendaCustom");
+
+labels.forEach(l=>{
+let div=document.createElement("div");
+div.className="legenda-item";
+
+div.innerHTML=`
+<div class="cor-box" style="background:${cor(l)}"></div>
+<div>${l} | Qtd ${mapPizza[l].qtd} | ${f(mapPizza[l].valor)}</div>
+`;
+
+legendaDiv.appendChild(div);
+});
 
 /* ===== TABELA ===== */
 const tabela = document.getElementById("tabela50");
@@ -253,14 +294,7 @@ let totalGeral = 0;
 let totaisMes = {};
 mesesTabela.forEach(m => totaisMes[m]=0);
 
-Object.entries(matriz50)
-.sort((a,b)=>{
-let ta=Object.values(a[1]).reduce((x,y)=>x+y,0);
-let tb=Object.values(b[1]).reduce((x,y)=>x+y,0);
-return tb-ta;
-})
-.forEach(([cliente,dados])=>{
-
+Object.entries(matriz50).forEach(([cliente,dados])=>{
 let linha = `<tr><td>${cliente}</td>`;
 let totalCliente = 0;
 
@@ -275,7 +309,6 @@ totalGeral+=totalCliente;
 
 linha+=`<td style="text-align:right;font-weight:bold;">${f(totalCliente)}</td></tr>`;
 html+=linha;
-
 });
 
 let totalLinha = `<tr style="font-weight:bold;">
