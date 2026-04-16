@@ -37,8 +37,8 @@ body { font-family: Arial; background:#cfe8ff; padding:20px; }
 .card p { font-size:16px; font-weight:bold; }
 
 .grafico-container {
-    width:90%; /* 🔥 AUMENTEI */
-    height:500px; /* 🔥 AUMENTEI */
+    width:90%;
+    height:500px;
     margin-top:40px;
     background:#0f3b4c;
     padding:20px;
@@ -53,13 +53,47 @@ body { font-family: Arial; background:#cfe8ff; padding:20px; }
     border-radius:10px;
 }
 
-/* donut menor */
+/* 🔥 layout lado a lado */
+.flex-donut {
+    display:flex;
+    gap:30px;
+    align-items:flex-start;
+}
+
+/* donut */
 .donut-chart {
     width:250px !important;
     height:250px !important;
 }
 
-/* legenda embaixo à esquerda */
+/* tabela */
+.tabela {
+    color:white;
+    font-size:12px;
+    overflow:auto;
+}
+
+.tabela table {
+    border-collapse:collapse;
+}
+
+.tabela th, .tabela td {
+    border:1px solid rgba(255,255,255,0.2);
+    padding:6px 8px;
+    text-align:right;
+}
+
+.tabela th {
+    background:#123f52;
+    text-align:center;
+}
+
+.tabela td:first-child {
+    text-align:left;
+    font-weight:bold;
+}
+
+/* legenda */
 .legenda {
     color:white;
     font-size:12px;
@@ -100,10 +134,19 @@ Data de Atualização: <span id="dataAtualizacao">...</span>
 </div>
 
 <div class="donut-container">
-    <canvas id="graficoDonut" class="donut-chart"></canvas>
 
-    <!-- 🔥 legenda embaixo à esquerda -->
-    <div id="legendaCustom" class="legenda"></div>
+<div class="flex-donut">
+
+<canvas id="graficoDonut" class="donut-chart"></canvas>
+
+<div class="tabela">
+<table id="tabelaFaturar"></table>
+</div>
+
+</div>
+
+<div id="legendaCustom" class="legenda"></div>
+
 </div>
 
 <script>
@@ -144,35 +187,48 @@ document.getElementById("totalCirurgias").innerText = [...new Set(vales)].length
 
 let map={},recT=0,cusT=0;
 let mapPizza={};
+let tabela={};
 
 linhas.slice(1).forEach(l=>{
 
-    let vale=l[2];
-    let situacao=l[4];
-    let mes=mesAno(l[5]);
+let vale=l[2];
+let situacao=l[4];
+let cliente=l[11];
+let mes=mesAno(l[5]);
 
-    let rec=br(l[27]);
-    let cus=br(l[29]);
+let rec=br(l[27]);
+let cus=br(l[29]);
 
-    recT+=rec;
-    cusT+=cus;
+recT+=rec;
+cusT+=cus;
 
-    if(mes){
-        if(!map[mes]) map[mes]={rec:0,cus:0};
-        map[mes].rec+=rec;
-        map[mes].cus+=cus;
-    }
+// mensal
+if(mes){
+if(!map[mes]) map[mes]={rec:0,cus:0};
+map[mes].rec+=rec;
+map[mes].cus+=cus;
+}
 
-    if(!mapPizza[situacao]){
-        mapPizza[situacao]={qtd:0,valor:0,vales:{}};
-    }
+// donut
+if(!mapPizza[situacao]){
+mapPizza[situacao]={qtd:0,valor:0,vales:{}};
+}
 
-    if(!mapPizza[situacao].vales[vale]){
-        mapPizza[situacao].qtd++;
-        mapPizza[situacao].vales[vale]=true;
-    }
+if(!mapPizza[situacao].vales[vale]){
+mapPizza[situacao].qtd++;
+mapPizza[situacao].vales[vale]=true;
+}
 
-    mapPizza[situacao].valor+=rec;
+mapPizza[situacao].valor+=rec;
+
+// 🔥 TABELA (APENAS COD 50)
+if(situacao && situacao.includes("50")){
+if(!tabela[cliente]) tabela[cliente]={};
+
+if(!tabela[cliente][mes]) tabela[cliente][mes]=0;
+
+tabela[cliente][mes]+=rec;
+}
 
 });
 
@@ -182,86 +238,34 @@ document.getElementById("receita").innerText=f(recT);
 document.getElementById("custo").innerText=f(cusT);
 document.getElementById("resultado").innerText=f(recT-cusT);
 
-// ===== MENSAL =====
-const meses=Object.keys(map).sort((a,b)=>{
+// ===== TABELA =====
+const mesesTabela=[...new Set(
+Object.values(tabela).flatMap(obj=>Object.keys(obj))
+)].sort((a,b)=>{
 let [m1,y1]=a.split('/');
 let [m2,y2]=b.split('/');
 return new Date(`20${y1}`,m1-1)-new Date(`20${y2}`,m2-1);
 });
 
-const rec=meses.map(m=>map[m].rec);
-const cus=meses.map(m=>map[m].cus);
-const lucro=meses.map(m=>map[m].rec-map[m].cus);
-const perc=meses.map(m=>{
-let l=map[m].rec-map[m].cus;
-return map[m].cus ? (l/map[m].cus)*100 : 0;
+let html="<tr><th>Cliente</th>";
+
+mesesTabela.forEach(m=> html+=`<th>${m}</th>`);
+
+html+="</tr>";
+
+Object.keys(tabela).forEach(cliente=>{
+
+html+=`<tr><td>${cliente}</td>`;
+
+mesesTabela.forEach(m=>{
+html+=`<td>${tabela[cliente][m] ? f(tabela[cliente][m]) : ""}</td>`;
 });
 
-new Chart(document.getElementById("graficoMensal"),{
-type:'bar',
-data:{
-labels:meses,
-datasets:[
-{data:cus,backgroundColor:'#ff7b7b'},
-{data:rec,backgroundColor:'#4CAF50'}
-]
-},
-options:{
-responsive:true,
-maintainAspectRatio:false,
-plugins:{legend:{display:false}},
-scales:{
-x:{ticks:{color:'white'}},
-y:{ticks:{color:'white'}}
-}
-},
-plugins:[
-{
-id:'labelsBarras',
-afterDatasetsDraw(chart){
-const {ctx}=chart;
-chart.data.datasets.forEach((dataset,i)=>{
-const meta=chart.getDatasetMeta(i);
-meta.data.forEach((bar,index)=>{
-const valor=dataset.data[index];
-ctx.fillStyle='white';
-ctx.font='10px Arial';
-ctx.textAlign='center';
-ctx.fillText(f(valor), bar.x, bar.y-5);
-});
-});
-}
-},
-{
-id:'linhaTopo',
-afterDraw(chart){
-const {ctx,chartArea:{left,right},scales:{x,y}}=chart;
-const max=Math.max(...rec,...cus);
-const yPos=y.getPixelForValue(max*1.15);
+html+="</tr>";
 
-ctx.strokeStyle='white';
-ctx.beginPath();
-ctx.moveTo(left,yPos);
-ctx.lineTo(right,yPos);
-ctx.stroke();
-
-meses.forEach((m,i)=>{
-const xPos=x.getPixelForValue(i);
-
-ctx.beginPath();
-ctx.arc(xPos,yPos,5,0,Math.PI*2);
-ctx.fillStyle='yellow';
-ctx.fill();
-
-ctx.fillStyle='white';
-ctx.font='10px Arial';
-ctx.fillText(perc[i].toFixed(0)+'%', xPos, yPos+15);
-ctx.fillText(f(lucro[i]), xPos, yPos+28);
 });
-}
-}
-]
-});
+
+document.getElementById("tabelaFaturar").innerHTML=html;
 
 // ===== DONUT =====
 function cor(label){
@@ -273,7 +277,6 @@ return "#999";
 
 const labels=Object.keys(mapPizza);
 const dados=labels.map(l=>mapPizza[l].qtd);
-const total=dados.reduce((a,b)=>a+b,0);
 
 new Chart(document.getElementById("graficoDonut"),{
 type:'doughnut',
@@ -284,21 +287,7 @@ data:dados,
 backgroundColor:labels.map(l=>cor(l))
 }]
 },
-options:{plugins:{legend:{display:false}}},
-plugins:[{
-id:'percent',
-afterDraw(chart){
-const {ctx}=chart;
-chart.data.datasets[0].data.forEach((v,i)=>{
-let meta=chart.getDatasetMeta(0).data[i];
-let p=((v/total)*100).toFixed(0);
-ctx.fillStyle='black';
-ctx.font='bold 12px Arial';
-ctx.textAlign='center';
-ctx.fillText(p+'%', meta.x, meta.y);
-});
-}
-}]
+options:{plugins:{legend:{display:false}}}
 });
 
 // legenda
