@@ -153,7 +153,7 @@ document.getElementById("receita").innerText=f(recT);
 document.getElementById("custo").innerText=f(cusT);
 document.getElementById("resultado").innerText=f(recT-cusT);
 
-// ===== MENSAL (INTOCADO) =====
+// ===== GRAFICO MENSAL (INALTERADO) =====
 const meses=Object.keys(map).sort((a,b)=>{
     let [m1,y1]=a.split('/');
     let [m2,y2]=b.split('/');
@@ -240,49 +240,68 @@ ctx.fillText(f(lucro[i]), xPos, yPos+28);
 ]
 });
 
-// ===== DONUT =====
+// ===== DONUT AJUSTADO =====
+
+function cor(label){
+    if(label.includes("70")) return "#4CAF50";
+    if(label.includes("50")) return "#FFD966";
+    if(label.includes("40")) return "#ff7b7b";
+    return `hsl(${Math.random()*360},70%,60%)`;
+}
+
 const labels=Object.keys(mapPizza);
 const dados=labels.map(l=>mapPizza[l].qtd);
 const total=dados.reduce((a,b)=>a+b,0);
 
+const legenda=labels.map(l=>
+`${l} | Qtd ${mapPizza[l].qtd} | ${f(mapPizza[l].valor)}`
+);
+
 new Chart(document.getElementById("graficoDonut"),{
 type:'doughnut',
 data:{
-labels:labels,
+labels:legenda,
 datasets:[{
 data:dados,
-backgroundColor:labels.map((_,i)=>`hsl(${i*60},70%,60%)`)
+backgroundColor:labels.map(l=>cor(l))
 }]
 },
 options:{
 plugins:{
-legend:{position:'bottom',labels:{color:'white'}},
+legend:{
+position:'bottom',
+labels:{
+color:'white',
+boxWidth:15,
+padding:15
+}
+},
 tooltip:{
 callbacks:{
 label:(ctx)=>{
-let nome=ctx.label;
-let qtd=mapPizza[nome].qtd;
-let valor=mapPizza[nome].valor;
-return `${nome} | Qtd: ${qtd} | ${f(valor)}`;
+let nome=labels[ctx.dataIndex];
+return `${nome} | Qtd ${mapPizza[nome].qtd} | ${f(mapPizza[nome].valor)}`;
+}
 }
 }
 }
 }
 },
 plugins:[{
-id:'labelsDonut',
+id:'percentual',
 afterDraw(chart){
+
 const {ctx}=chart;
 
 chart.data.datasets[0].data.forEach((valor,i)=>{
 let meta=chart.getDatasetMeta(0).data[i];
-let percent=((valor/total)*100).toFixed(0);
+let p=((valor/total)*100).toFixed(0);
 
-ctx.fillStyle='white';
-ctx.font='10px Arial';
+ctx.fillStyle='black';
+ctx.font='bold 12px Arial';
 ctx.textAlign='center';
 
-ctx.fillText(`${valor} (${percent}%)`, meta.x, meta.y);
+ctx.fillText(`${p}%`, meta.x, meta.y);
 });
 }
 }]
