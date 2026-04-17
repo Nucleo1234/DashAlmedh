@@ -132,27 +132,6 @@ body { font-family: Arial; background:#cfe8ff; padding:20px; }
     cursor: pointer;
 }
 
-/* ===== TABELA CURVA ABC ===== */
-#tabelaABC {
-    border-collapse: collapse;
-    font-size: 11px;
-    width: 100%;
-}
-
-#tabelaABC th, #tabelaABC td {
-    padding: 6px 8px;
-    border: 1px solid rgba(255,255,255,0.3);
-}
-
-#tabelaABC th {
-    background: rgba(255,255,255,0.1);
-}
-
-#tabelaABC td {
-    color: white;
-}
-
-
 </style>
 </head>
 
@@ -209,7 +188,9 @@ Data de Atualização: <span id="dataAtualizacao">...</span>
 
     <div style="width:100%; color:white;">
         <h3>Curva ABC Cirurgia</h3>
+
         <table id="tabelaABC"></table>
+
     </div>
 
 </div>
@@ -743,141 +724,6 @@ renderTabela();
 
 })();
 </script>
-
-<script>
-
-(function(){
-
-const urlABC = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&output=csv";
-
-function parseCSV_A(t){
-    const l=[];let r=[],v='',q=false;
-    for(let c of t){
-        if(c=='"')q=!q;
-        else if(c==','&&!q){r.push(v);v=''}
-        else if((c=='\n'||c=='\r')&&!q){
-            if(v||r.length){r.push(v);l.push(r);r=[];v=''}
-        } else v+=c;
-    }
-    if(v||r.length){r.push(v);l.push(r)}
-    return l;
-}
-
-function br_A(v){
-    return parseFloat(v?.replace(/\./g,'').replace(',','.'))||0;
-}
-
-function f_A(v){
-    return v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-}
-
-fetch(urlABC)
-.then(r=>r.text())
-.then(data=>{
-
-const linhas = parseCSV_A(data);
-
-let mapa = {};
-
-linhas.slice(1).forEach(l=>{
-
-    let vale = l[2];
-    let grupo = l[14];
-    let tipo = l[15];
-    let valor = br_A(l[27]);
-    let custo = br_A(l[29]);
-
-    if(!tipo) return;
-
-    if(!mapa[tipo]){
-        mapa[tipo] = {
-            grupo: grupo,
-            vales: new Set(),
-            valor: 0,
-            custo: 0
-        };
-    }
-
-    mapa[tipo].vales.add(vale);
-    mapa[tipo].valor += valor;
-    mapa[tipo].custo += custo;
-
-});
-
-let lista = Object.entries(mapa).map(([tipo,d])=>{
-
-    let qtd = d.vales.size;
-    let resultado = d.valor - d.custo;
-
-    return {
-        grupo: d.grupo,
-        tipo,
-        qtd,
-        valor: d.valor,
-        custo: d.custo,
-        resultado,
-        mediaValor: qtd ? d.valor/qtd : 0,
-        mediaCusto: qtd ? d.custo/qtd : 0
-    };
-
-});
-
-lista.sort((a,b)=> b.resultado - a.resultado);
-
-let html = `
-<tr>
-<th>Grupo</th>
-<th>Tipo</th>
-<th>Qtde</th>
-<th>Valor</th>
-<th>Custo</th>
-<th>Resultado</th>
-<th>Média Valor</th>
-<th>Média Custo</th>
-</tr>
-`;
-
-let totQtd=0, totVal=0, totCus=0;
-
-lista.forEach(l=>{
-
-    totQtd += l.qtd;
-    totVal += l.valor;
-    totCus += l.custo;
-
-    html += `
-    <tr>
-    <td>${l.grupo}</td>
-    <td>${l.tipo}</td>
-    <td>${l.qtd}</td>
-    <td style="text-align:right;">${f_A(l.valor)}</td>
-    <td style="text-align:right;">${f_A(l.custo)}</td>
-    <td style="text-align:right;">${f_A(l.resultado)}</td>
-    <td style="text-align:right;">${f_A(l.mediaValor)}</td>
-    <td style="text-align:right;">${f_A(l.mediaCusto)}</td>
-    </tr>
-    `;
-});
-
-html += `
-<tr style="font-weight:bold;">
-<td colspan="2">TOTAL</td>
-<td>${totQtd}</td>
-<td style="text-align:right;">${f_A(totVal)}</td>
-<td style="text-align:right;">${f_A(totCus)}</td>
-<td style="text-align:right;">${f_A(totVal - totCus)}</td>
-<td></td>
-<td></td>
-</tr>
-`;
-
-document.getElementById("tabelaABC").innerHTML = html;
-
-});
-
-})();
-</script>
-
 
 
 </body>
