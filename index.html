@@ -579,7 +579,7 @@ function f(v){
 }
 
 let dados = [];
-let ordem = {}; // controle ASC/DESC
+let ordem = {};
 
 fetch(urlABC)
 .then(r=>r.text())
@@ -588,7 +588,6 @@ fetch(urlABC)
 const linhas = parseCSV(data);
 let mapa = {};
 
-// ===== PROCESSAMENTO =====
 linhas.slice(1).forEach(l=>{
 
     let grupo = l[14];
@@ -623,6 +622,9 @@ dados = Object.values(mapa).map(item=>{
     let qtd = item.vales.size;
     let resultado = item.valor - item.custo;
 
+    let mediaValor = qtd ? item.valor/qtd : 0;
+    let mediaCusto = qtd ? item.custo/qtd : 0;
+
     return {
         grupo:item.grupo,
         tipo:item.tipo,
@@ -630,8 +632,9 @@ dados = Object.values(mapa).map(item=>{
         valor:item.valor,
         custo:item.custo,
         resultado,
-        mediaValor: qtd ? item.valor/qtd : 0,
-        mediaCusto: qtd ? item.custo/qtd : 0
+        mediaValor,
+        mediaCusto,
+        diferencaMedia: mediaValor - mediaCusto   // 🔥 NOVO CAMPO
     };
 
 });
@@ -656,6 +659,7 @@ let html = `
 <th onclick="ordenar('resultado')">Resultado</th>
 <th onclick="ordenar('mediaValor')">Média Valor</th>
 <th onclick="ordenar('mediaCusto')">Média Custo</th>
+<th onclick="ordenar('diferencaMedia')"># Média Valor - Média Custo</th>
 </tr>
 `;
 
@@ -677,12 +681,13 @@ html += `
 <td style="text-align:right;">${f(d.resultado)}</td>
 <td style="text-align:right;">${f(d.mediaValor)}</td>
 <td style="text-align:right;">${f(d.mediaCusto)}</td>
+<td style="text-align:right;">${f(d.diferencaMedia)}</td>
 </tr>
 `;
 
 });
 
-// ===== LINHA TOTAL =====
+// ===== TOTAL =====
 html += `
 <tr style="font-weight:bold;">
 <td colspan="2">TOTAL</td>
@@ -690,6 +695,7 @@ html += `
 <td style="text-align:right;">${f(totalValor)}</td>
 <td style="text-align:right;">${f(totalCusto)}</td>
 <td style="text-align:right;">${f(totalValor-totalCusto)}</td>
+<td></td>
 <td></td>
 <td></td>
 </tr>
