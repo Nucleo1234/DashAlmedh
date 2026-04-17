@@ -1,261 +1,13 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-<meta charset="UTF-8">
-<title>Dashboard - Indicadores</title>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-<style>
-body { font-family: Arial; background:#cfe8ff; padding:20px; }
-
-.topo { font-size:13px; font-weight:bold; }
-
-.titulo {
-    text-align:center;
-    font-size:22px;
-    font-weight:bold;
-    margin-top:30px;
-}
-
-.container-cards {
-    display:flex;
-    justify-content:center;
-    gap:15px;
-    margin-top:30px;
-}
-
-.card {
-    width:150px;
-    background:white;
-    padding:10px;
-    border-radius:10px;
-    text-align:center;
-}
-
-.card h3 { font-size:12px; margin:0; }
-.card p { font-size:16px; font-weight:bold; }
-
-.grafico-container {
-    width:90%;
-    height:500px;
-    margin-top:40px;
-    background:#0f3b4c;
-    padding:20px;
-    border-radius:10px;
-}
-
-.donut-container {
-    width:90%;
-    margin-top:40px;
-    background:#0f3b4c;
-    padding:20px;
-    border-radius:10px;
-    display:flex;
-    gap:30px;
-    align-items:flex-start;
-}
-
-.donut-chart {
-    width:250px !important;
-    height:250px !important;
-}
-
-.legenda {
-    color:white;
-    font-size:12px;
-    margin-top:20px;
-}
-
-.legenda-item {
-    display:flex;
-    align-items:center;
-    margin-bottom:8px;
-}
-
-.cor-box {
-    width:12px;
-    height:12px;
-    margin-right:8px;
-}
-
-/* ===== TABELA ORIGINAL ===== */
-#tabelaMatriz {
-    color:white;
-    width:100%;
-    overflow:auto;
-}
-
-#tabela50 {
-    border-collapse:collapse;
-    font-size:11px;
-    width:100%;
-}
-
-#tabela50 th, #tabela50 td {
-    padding:6px 8px;
-    border:1px solid rgba(255,255,255,0.3);
-}
-
-#tabela50 th {
-    background:rgba(255,255,255,0.1);
-}
-
-/* ===== NOVA TABELA (MESMO PADRÃO) ===== */
-#tabelaReceber {
-    border-collapse:collapse;
-    font-size:11px;
-    width:100%;
-}
-
-#tabelaReceber th, #tabelaReceber td {
-    padding:6px 8px;
-    border:1px solid rgba(255,255,255,0.3);
-}
-
-#tabelaReceber th {
-    background:rgba(255,255,255,0.1);
-}
-</style>
-</head>
-
-<body>
-
-<div class="topo">
-Data de Atualização: <span id="dataAtualizacao">...</span>
-</div>
-
-<div class="titulo">Indicadores de Performance</div>
-
-<div class="container-cards">
-<div class="card"><h3>Total de Cirurgias</h3><p id="totalCirurgias">...</p></div>
-<div class="card"><h3>Receita Bruta R$</h3><p id="receita">...</p></div>
-<div class="card"><h3>Custo R$</h3><p id="custo">...</p></div>
-<div class="card"><h3>Resultado Bruto R$</h3><p id="resultado">...</p></div>
-</div>
-
-<div class="grafico-container">
-<canvas id="graficoMensal"></canvas>
-</div>
-
-<div class="donut-container">
-    <div>
-        <canvas id="graficoDonut" class="donut-chart"></canvas>
-        <div id="legendaCustom" class="legenda"></div>
-    </div>
-
-    <div id="tabelaMatriz">
-        <h3>Cirurgias - Faturar</h3>
-        <table id="tabela50"></table>
-    </div>
-</div>
-
-<!-- ===== NOVO BLOCO ===== -->
-<div class="donut-container">
-    <div>
-        <canvas id="graficoDonutReceber" class="donut-chart"></canvas>
-        <div id="legendaReceber" class="legenda"></div>
-    </div>
-
-    <div id="tabelaMatriz">
-        <h3>Valores a Receber</h3>
-        <table id="tabelaReceber"></table>
-    </div>
-</div>
-
 <script>
-
-/* ===== SEU SCRIPT ORIGINAL (INALTERADO) ===== */
-const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&output=csv";
-
-function parseCSV(t){
-    const l=[];let r=[],v='',q=false;
-    for(let c of t){
-        if(c=='"')q=!q;
-        else if(c==','&&!q){r.push(v);v=''}
-        else if((c=='\n'||c=='\r')&&!q){
-            if(v||r.length){r.push(v);l.push(r);r=[];v=''}
-        } else v+=c;
-    }
-    if(v||r.length){r.push(v);l.push(r)}
-    return l;
-}
-
-function br(v){
-    return parseFloat(v?.replace(/\./g,'').replace(',','.'))||0;
-}
-
-function mesAno(d){
-    if(!d||!d.includes("/"))return "";
-    let p=d.split("/");
-    return p[1]+"/"+p[2].slice(-2);
-}
-
-fetch(url).then(r=>r.text()).then(data=>{
-
-const linhas=parseCSV(data);
-
-document.getElementById("dataAtualizacao").innerText = linhas[1][0];
-
-const vales = linhas.slice(1).map(l => l[2]).filter(v => v);
-document.getElementById("totalCirurgias").innerText = [...new Set(vales)].length;
-
-let map={},recT=0,cusT=0;
-let mapPizza={};
-let matriz50 = {};
-let mesesSet = new Set();
-
-linhas.slice(1).forEach(l=>{
-    let vale=l[2];
-    let situacao=l[4];
-    let mes=mesAno(l[5]);
-    let rec=br(l[27]);
-    let cus=br(l[29]);
-
-    recT+=rec;
-    cusT+=cus;
-
-    if(mes){
-        if(!map[mes]) map[mes]={rec:0,cus:0};
-        map[mes].rec+=rec;
-        map[mes].cus+=cus;
-    }
-
-    if(!mapPizza[situacao]){
-        mapPizza[situacao]={qtd:0,valor:0,vales:{}};
-    }
-
-    if(!mapPizza[situacao].vales[vale]){
-        mapPizza[situacao].qtd++;
-        mapPizza[situacao].vales[vale]=true;
-    }
-
-    mapPizza[situacao].valor+=rec;
-
-    let cliente = l[8];
-    let mes50 = mesAno(l[5]);
-    let valor50 = br(l[27]);
-
-    if(situacao && situacao.includes("50") && cliente && mes50){
-        mesesSet.add(mes50);
-        if(!matriz50[cliente]) matriz50[cliente] = {};
-        if(!matriz50[cliente][mes50]) matriz50[cliente][mes50] = 0;
-        matriz50[cliente][mes50] += valor50;
-    }
-});
-
-/* ===== RESTANTE DO SCRIPT ORIGINAL SEGUE NORMAL ===== */
-});
-
-/* ===== NOVO SCRIPT ISOLADO ===== */
 (function(){
 
 const urlReceber = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1261021270&single=true&output=csv";
 
+/* ===== FUNÇÕES ISOLADAS ===== */
 function parseCSV_R(t){
     const l=[];let r=[],v='',q=false;
     for(let c of t){
-        if(c=='\"')q=!q;
+        if(c=='"')q=!q;
         else if(c==','&&!q){r.push(v);v=''}
         else if((c=='\n'||c=='\r')&&!q){
             if(v||r.length){r.push(v);l.push(r);r=[];v=''}
@@ -269,104 +21,131 @@ function br_R(v){
     return parseFloat(v?.replace(/\./g,'').replace(',','.'))||0;
 }
 
-function f(v){
+function f_R(v){
     return v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 }
 
+/* ===== FETCH ===== */
 fetch(urlReceber)
 .then(r=>r.text())
 .then(data=>{
 
-const linhas=parseCSV_R(data);
+const linhas = parseCSV_R(data);
 
-let clientes={},matriz={},mesesSet=new Set();
+let clientes = {};
+let matriz = {};
+let mesesSet = new Set();
 
+/* ===== PROCESSAMENTO ===== */
 linhas.slice(1).forEach(l=>{
-    let cliente=l[1];
-    let venc=l[7];
-    let valor=br_R(l[19]);
+
+    let cliente = l[1];   // Nome Cliente (coluna B)
+    let venc = l[7];      // Dt.vencimento (coluna H)
+    let valor = br_R(l[19]); // Vr.aberto (coluna T)
 
     if(!cliente || !venc) return;
 
-    let p=venc.split("/");
-    let mes=`${p[1]}/${p[2]}`;
+    let p = venc.split("/");
+    let mes = `${p[1]}/${p[2]}`;
 
-    if(!clientes[cliente]) clientes[cliente]={qtd:0,valor:0};
+/* ===== AGRUPAMENTO ===== */
+    if(!clientes[cliente]){
+        clientes[cliente] = {qtd:0, valor:0};
+    }
+
     clientes[cliente].qtd++;
-    clientes[cliente].valor+=valor;
+    clientes[cliente].valor += valor;
 
+/* ===== MATRIZ ===== */
     mesesSet.add(mes);
 
-    if(!matriz[cliente]) matriz[cliente]={};
-    if(!matriz[cliente][mes]) matriz[cliente][mes]=0;
-    matriz[cliente][mes]+=valor;
+    if(!matriz[cliente]) matriz[cliente] = {};
+    if(!matriz[cliente][mes]) matriz[cliente][mes] = 0;
+
+    matriz[cliente][mes] += valor;
 });
 
+/* ===== ORDENAR MESES ===== */
 const meses = Array.from(mesesSet).sort((a,b)=>{
     let [m1,y1]=a.split('/');
     let [m2,y2]=b.split('/');
     return new Date(y1,m1-1)-new Date(y2,m2-1);
 });
 
-const labels=Object.keys(clientes);
-const dados=labels.map(l=>clientes[l].qtd);
-const cores=labels.map((_,i)=>`hsl(${i*40},70%,60%)`);
+/* ===== DONUT ===== */
+const labels = Object.keys(clientes);
+const dados = labels.map(l=>clientes[l].qtd);
+const cores = labels.map((_,i)=>`hsl(${i*40},70%,60%)`);
 
 new Chart(document.getElementById("graficoDonutReceber"),{
-type:'doughnut',
-data:{labels:labels,datasets:[{data:dados,backgroundColor:cores}]},
-options:{plugins:{legend:{display:false}}}
+    type:'doughnut',
+    data:{
+        labels:labels,
+        datasets:[{
+            data:dados,
+            backgroundColor:cores
+        }]
+    },
+    options:{plugins:{legend:{display:false}}}
 });
 
-const legenda=document.getElementById("legendaReceber");
+/* ===== LEGENDA ===== */
+const legenda = document.getElementById("legendaReceber");
 
 labels.forEach((l,i)=>{
-let div=document.createElement("div");
-div.className="legenda-item";
-div.innerHTML=`
-<div class="cor-box" style="background:${cores[i]}"></div>
-<div>${l} | Qtd: ${clientes[l].qtd} | ${f(clientes[l].valor)}</div>
-`;
-legenda.appendChild(div);
+    let div = document.createElement("div");
+    div.className = "legenda-item";
+
+    div.innerHTML = `
+    <div class="cor-box" style="background:${cores[i]}"></div>
+    <div>${l} | Qtd: ${clientes[l].qtd} | ${f_R(clientes[l].valor)}</div>
+    `;
+
+    legenda.appendChild(div);
 });
 
-let html="<tr><th>Cliente</th>";
-meses.forEach(m=> html+=`<th>${m}</th>`);
-html+="<th>Total</th></tr>";
+/* ===== TABELA ===== */
+let html = "<tr><th>Cliente</th>";
+meses.forEach(m=> html += `<th>${m}</th>`);
+html += "<th>Total</th></tr>";
 
-let totalGeral=0;
-let totaisMes={};
+let totalGeral = 0;
+let totaisMes = {};
 meses.forEach(m=> totaisMes[m]=0);
 
 Object.entries(matriz).forEach(([cliente,dados])=>{
-let totalCliente=0;
-let linha=`<tr><td>${cliente}</td>`;
+
+    let totalCliente = 0;
+    let linha = `<tr><td>${cliente}</td>`;
+
+    meses.forEach(m=>{
+        let v = dados[m] || 0;
+        totalCliente += v;
+        totaisMes[m] += v;
+
+        linha += `<td style="text-align:right;">${v ? f_R(v) : ""}</td>`;
+    });
+
+    totalGeral += totalCliente;
+
+    linha += `<td style="text-align:right;font-weight:bold;">${f_R(totalCliente)}</td></tr>`;
+    html += linha;
+});
+
+/* ===== TOTAL ===== */
+let totalLinha = `<tr style="font-weight:bold;"><td>Total</td>`;
 
 meses.forEach(m=>{
-let v=dados[m]||0;
-totalCliente+=v;
-totaisMes[m]+=v;
-linha+=`<td style="text-align:right;">${v?f(v):""}</td>`;
+    totalLinha += `<td style="text-align:right;">${f_R(totaisMes[m])}</td>`;
 });
 
-totalGeral+=totalCliente;
-linha+=`<td style="text-align:right;font-weight:bold;">${f(totalCliente)}</td></tr>`;
-html+=linha;
-});
+totalLinha += `<td style="text-align:right;">${f_R(totalGeral)}</td></tr>`;
 
-let totalLinha=`<tr style="font-weight:bold;"><td>Total</td>`;
-meses.forEach(m=>{
-totalLinha+=`<td style="text-align:right;">${f(totaisMes[m])}</td>`;
-});
-totalLinha+=`<td style="text-align:right;">${f(totalGeral)}</td></tr>`;
-html+=totalLinha;
+html += totalLinha;
 
-document.getElementById("tabelaReceber").innerHTML=html;
+document.getElementById("tabelaReceber").innerHTML = html;
 
 });
 
 })();
 </script>
-
-</body>
-</html>
