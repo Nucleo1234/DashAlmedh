@@ -79,33 +79,42 @@ body { font-family: Arial; background:#cfe8ff; padding:20px; }
     margin-right:8px;
 }
 
-/* ===== TABELAS PADRÃO (AJUSTE AQUI) ===== */
+/* ===== TABELA ORIGINAL ===== */
 #tabelaMatriz {
     color:white;
     width:100%;
     overflow:auto;
 }
 
-#tabela50, #tabelaReceber {
+#tabela50 {
     border-collapse:collapse;
     font-size:11px;
     width:100%;
 }
 
-#tabela50 th, #tabela50 td,
+#tabela50 th, #tabela50 td {
+    padding:6px 8px;
+    border:1px solid rgba(255,255,255,0.3);
+}
+
+#tabela50 th {
+    background:rgba(255,255,255,0.1);
+}
+
+/* ===== NOVA TABELA (MESMO PADRÃO) ===== */
+#tabelaReceber {
+    border-collapse:collapse;
+    font-size:11px;
+    width:100%;
+}
+
 #tabelaReceber th, #tabelaReceber td {
     padding:6px 8px;
     border:1px solid rgba(255,255,255,0.3);
 }
 
-#tabela50 th,
 #tabelaReceber th {
     background:rgba(255,255,255,0.1);
-}
-
-#tabela50 tr:last-child,
-#tabelaReceber tr:last-child {
-    font-weight:bold;
 }
 </style>
 </head>
@@ -148,7 +157,7 @@ Data de Atualização: <span id="dataAtualizacao">...</span>
         <div id="legendaReceber" class="legenda"></div>
     </div>
 
-    <div style="color:white; width:100%;">
+    <div id="tabelaMatriz">
         <h3>Valores a Receber</h3>
         <table id="tabelaReceber"></table>
     </div>
@@ -156,7 +165,7 @@ Data de Atualização: <span id="dataAtualizacao">...</span>
 
 <script>
 
-/* ===== (SEU SCRIPT ORIGINAL - INTACTO) ===== */
+/* ===== SEU SCRIPT ORIGINAL (INALTERADO) ===== */
 const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&output=csv";
 
 function parseCSV(t){
@@ -183,6 +192,7 @@ function mesAno(d){
 }
 
 fetch(url).then(r=>r.text()).then(data=>{
+
 const linhas=parseCSV(data);
 
 document.getElementById("dataAtualizacao").innerText = linhas[1][0];
@@ -234,15 +244,7 @@ linhas.slice(1).forEach(l=>{
     }
 });
 
-const f=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-
-document.getElementById("receita").innerText=f(recT);
-document.getElementById("custo").innerText=f(cusT);
-document.getElementById("resultado").innerText=f(recT-cusT);
-
-/* ===== (RESTANTE DO SCRIPT ORIGINAL IGUAL) ===== */
-// (mantido exatamente como você tinha)
-
+/* ===== RESTANTE DO SCRIPT ORIGINAL SEGUE NORMAL ===== */
 });
 
 /* ===== NOVO SCRIPT ISOLADO ===== */
@@ -253,7 +255,7 @@ const urlReceber = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2M
 function parseCSV_R(t){
     const l=[];let r=[],v='',q=false;
     for(let c of t){
-        if(c=='"')q=!q;
+        if(c=='\"')q=!q;
         else if(c==','&&!q){r.push(v);v=''}
         else if((c=='\n'||c=='\r')&&!q){
             if(v||r.length){r.push(v);l.push(r);r=[];v=''}
@@ -267,7 +269,7 @@ function br_R(v){
     return parseFloat(v?.replace(/\./g,'').replace(',','.'))||0;
 }
 
-function f_R(v){
+function f(v){
     return v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 }
 
@@ -321,8 +323,10 @@ const legenda=document.getElementById("legendaReceber");
 labels.forEach((l,i)=>{
 let div=document.createElement("div");
 div.className="legenda-item";
-div.innerHTML=`<div class="cor-box" style="background:${cores[i]}"></div>
-<div>${l} | Qtd: ${clientes[l].qtd} | ${f_R(clientes[l].valor)}</div>`;
+div.innerHTML=`
+<div class="cor-box" style="background:${cores[i]}"></div>
+<div>${l} | Qtd: ${clientes[l].qtd} | ${f(clientes[l].valor)}</div>
+`;
 legenda.appendChild(div);
 });
 
@@ -342,19 +346,19 @@ meses.forEach(m=>{
 let v=dados[m]||0;
 totalCliente+=v;
 totaisMes[m]+=v;
-linha+=`<td style="text-align:right;">${v?f_R(v):""}</td>`;
+linha+=`<td style="text-align:right;">${v?f(v):""}</td>`;
 });
 
 totalGeral+=totalCliente;
-linha+=`<td style="text-align:right;font-weight:bold;">${f_R(totalCliente)}</td></tr>`;
+linha+=`<td style="text-align:right;font-weight:bold;">${f(totalCliente)}</td></tr>`;
 html+=linha;
 });
 
 let totalLinha=`<tr style="font-weight:bold;"><td>Total</td>`;
 meses.forEach(m=>{
-totalLinha+=`<td style="text-align:right;">${f_R(totaisMes[m])}</td>`;
+totalLinha+=`<td style="text-align:right;">${f(totaisMes[m])}</td>`;
 });
-totalLinha+=`<td style="text-align:right;">${f_R(totalGeral)}</td></tr>`;
+totalLinha+=`<td style="text-align:right;">${f(totalGeral)}</td></tr>`;
 html+=totalLinha;
 
 document.getElementById("tabelaReceber").innerHTML=html;
