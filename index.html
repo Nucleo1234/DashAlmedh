@@ -6,28 +6,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-/* ===== TABELA CURVA ABC ===== */
-#tabelaABC {
-    border-collapse: collapse;
-    font-size: 11px;
-    width: 100%;
-}
-
-#tabelaABC th, #tabelaABC td {
-    padding: 6px 8px;
-    border: 1px solid rgba(255,255,255,0.3);
-}
-
-#tabelaABC th {
-    background: rgba(255,255,255,0.1);
-    cursor: pointer;
-}
-
-#tabelaABC td {
-    color: white;
-}
-
-
 <style>
 body { font-family: Arial; background:#cfe8ff; padding:20px; }
 
@@ -154,6 +132,27 @@ body { font-family: Arial; background:#cfe8ff; padding:20px; }
     cursor: pointer;
 }
 
+/* ===== TABELA CURVA ABC ===== */
+#tabelaABC {
+    border-collapse: collapse;
+    font-size: 11px;
+    width: 100%;
+}
+
+#tabelaABC th, #tabelaABC td {
+    padding: 6px 8px;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+#tabelaABC th {
+    background: rgba(255,255,255,0.1);
+}
+
+#tabelaABC td {
+    color: white;
+}
+
+
 </style>
 </head>
 
@@ -205,16 +204,15 @@ Data de Atualização: <span id="dataAtualizacao">...</span>
 
 </div>
 
-<!-- ===== NOVO BLOCO: CURVA ABC ===== -->
+<!-- ===== BLOCO CURVA ABC ===== -->
 <div class="donut-container">
 
     <div style="width:100%; color:white;">
         <h3>Curva ABC Cirurgia</h3>
-        <table id="tabelaABC" style="border-collapse:collapse; font-size:11px; width:100%;"></table>
+        <table id="tabelaABC"></table>
     </div>
 
 </div>
-
 
 <script>
 
