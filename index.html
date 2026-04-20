@@ -8,6 +8,40 @@
 
 <style>
 
+.tabs {
+    display:flex;
+    gap:15px;
+    margin-bottom:20px;
+}
+
+.tab-btn {
+    background:#1f4e5f;
+    color:white;
+    padding:10px 20px;
+    border-radius:8px;
+    cursor:pointer;
+    border:none;
+    font-size:14px;
+    transition:0.3s;
+}
+
+.tab-btn:hover {
+    background:#2f6f86;
+}
+
+.tab-btn.active {
+    background:#00a8cc;
+}
+
+/* conteúdo das abas */
+.tab-content {
+    display:none;
+}
+
+.tab-content.active {
+    display:block;
+}
+
 .abas {
     display:flex;
     gap:10px;
@@ -164,30 +198,28 @@ body { font-family: Arial; background:#cfe8ff; padding:20px; }
 
 <body>
 
-<div class="abas">
-    <button onclick="trocarAba('aba1')">Performance</button>
-    <button onclick="trocarAba('aba2')">Conciliação</button>
-    <button onclick="trocarAba('aba3')">Fluxo Projetado</button>
-    <button onclick="trocarAba('aba4')">Proj x Realizado</button>
+<div class="tabs">
+    <button class="tab-btn active" onclick="trocarAba('aba1', this)">Performance</button>
+    <button class="tab-btn" onclick="trocarAba('aba2', this)">Conciliação</button>
+    <button class="tab-btn" onclick="trocarAba('aba3', this)">Fluxo Projetado</button>
+    <button class="tab-btn" onclick="trocarAba('aba4', this)">Proj x Realizado</button>
 </div>
 
-
-<div id="aba1" class="aba ativa">
-    <!-- SEU DASHBOARD ATUAL COMPLETO -->
+<div id="aba1" class="tab-content active">
+    <!-- SEU DASHBOARD ATUAL AQUI -->
 </div>
 
-<div id="aba2" class="aba">
-    <!-- COLAR HTML DA CONCILIAÇÃO -->
+<div id="aba2" class="tab-content">
+    <!-- código da conciliação -->
 </div>
 
-<div id="aba3" class="aba">
-    <!-- COLAR HTML DO FLUXO -->
+<div id="aba3" class="tab-content">
+    <!-- fluxo projetado -->
 </div>
 
-<div id="aba4" class="aba">
-    <!-- FUTURO RELATÓRIO -->
+<div id="aba4" class="tab-content">
+    <!-- vamos construir depois -->
 </div>
-
 
 
 
@@ -252,6 +284,25 @@ Data de Atualização: <span id="dataAtualizacao">...</span>
 </div>
 
 <script>
+
+function trocarAba(id, botao){
+
+    // esconder tudo
+    document.querySelectorAll('.tab-content')
+        .forEach(el => el.classList.remove('active'));
+
+    // remover destaque dos botões
+    document.querySelectorAll('.tab-btn')
+        .forEach(btn => btn.classList.remove('active'));
+
+    // mostrar aba clicada
+    document.getElementById(id).classList.add('active');
+
+    // destacar botão
+    botao.classList.add('active');
+}
+
+
 
 /* ===== SEU SCRIPT ORIGINAL (INALTERADO) ===== */
 const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&output=csv";
