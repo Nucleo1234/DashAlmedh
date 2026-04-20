@@ -2,42 +2,56 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Dashboard Completo</title>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<title>Dashboard Corporativo</title>
 
 <style>
 
-/* ===== BASE ===== */
+/* ===== RESET ===== */
 body {
-    font-family: Arial;
-    background:#cfe8ff;
     margin:0;
+    font-family: Arial, sans-serif;
+    background:#f4f7fb;
 }
 
-/* ===== MENU ===== */
-.tabs {
-    display:flex;
-    gap:10px;
+/* ===== HEADER ===== */
+.header {
     background:#0f3b4c;
-    padding:15px 20px;
-}
-
-.tab-button {
-    background:#1c556b;
     color:white;
-    border:none;
-    padding:10px 20px;
-    border-radius:8px;
-    cursor:pointer;
+    padding:15px 25px;
+    font-size:18px;
     font-weight:bold;
 }
 
-.tab-button.active {
-    background:#00a8cc;
+/* ===== MENU DE ABAS ===== */
+.tabs {
+    display:flex;
+    background:#ffffff;
+    border-bottom:2px solid #e0e0e0;
+    padding-left:20px;
 }
 
-/* ===== ABAS ===== */
+.tab-button {
+    padding:14px 20px;
+    cursor:pointer;
+    border:none;
+    background:none;
+    font-size:14px;
+    font-weight:600;
+    color:#555;
+    border-bottom:3px solid transparent;
+    transition:0.3s;
+}
+
+.tab-button:hover {
+    color:#0f3b4c;
+}
+
+.tab-button.active {
+    color:#0f3b4c;
+    border-bottom:3px solid #0f3b4c;
+}
+
+/* ===== CONTEÚDO ===== */
 .tab-content {
     display:none;
     padding:20px;
@@ -47,63 +61,21 @@ body {
     display:block;
 }
 
-/* ===== DASHBOARD ===== */
-.topo { font-size:13px; font-weight:bold; }
-
-.titulo {
-    text-align:center;
-    font-size:22px;
-    font-weight:bold;
-    margin-top:30px;
-}
-
-.container-cards {
-    display:flex;
-    justify-content:center;
-    gap:15px;
-    margin-top:30px;
-}
-
-.card {
-    width:150px;
-    background:white;
-    padding:10px;
+/* ===== CONTAINER INTERNO (onde você cola os dashboards) ===== */
+.dashboard-container {
+    background:#ffffff;
     border-radius:10px;
-    text-align:center;
-}
-
-.grafico-container {
-    width:90%;
-    height:400px;
-    margin-top:40px;
-    background:#0f3b4c;
     padding:20px;
-    border-radius:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
 }
 
-.donut-container {
-    width:90%;
-    margin-top:40px;
-    background:#0f3b4c;
-    padding:20px;
-    border-radius:10px;
-}
-
-/* ===== TABELA ===== */
-table {
-    border-collapse: collapse;
-    font-size: 11px;
-    width: 100%;
-    color:white;
-}
-
-th, td {
-    padding:6px;
-    border:1px solid rgba(255,255,255,0.3);
-}
-
-th {
-    background: rgba(255,255,255,0.1);
+.placeholder {
+    text-align:center;
+    color:#999;
+    padding:40px;
+    border:2px dashed #ddd;
+    border-radius:8px;
+    font-size:14px;
 }
 
 </style>
@@ -111,149 +83,95 @@ th {
 
 <body>
 
-<!-- ===== MENU ===== -->
+<!-- ===== TOPO ===== -->
+<div class="header">
+    Dashboard Financeiro e Operacional
+</div>
+
+<!-- ===== ABAS ===== -->
 <div class="tabs">
-    <button class="tab-button active" onclick="abrirAba('aba1', this)">Performance</button>
-    <button class="tab-button" onclick="abrirAba('aba2', this)">Conciliação</button>
-    <button class="tab-button" onclick="abrirAba('aba3', this)">Fluxo Projetado</button>
-    <button class="tab-button" onclick="abrirAba('aba4', this)">Proj x Realizado</button>
+    <button class="tab-button active" onclick="abrirAba('aba1', this)">
+        Performance e Indicadores
+    </button>
+
+    <button class="tab-button" onclick="abrirAba('aba2', this)">
+        Conciliação Bancária
+    </button>
+
+    <button class="tab-button" onclick="abrirAba('aba3', this)">
+        Fluxo de Caixa Projetado
+    </button>
+
+    <button class="tab-button" onclick="abrirAba('aba4', this)">
+        Fluxo de Caixa Projetado vs Realizado
+    </button>
 </div>
 
-<!-- ===== ABA 1 ===== -->
+<!-- ===== CONTEÚDO DAS ABAS ===== -->
+
+<!-- ABA 1 -->
 <div id="aba1" class="tab-content active">
+    <div class="dashboard-container">
 
-<div class="topo">
-Data de Atualização: <span id="dataAtualizacao">...</span>
+        <!-- COLE SEU DASHBOARD DE PERFORMANCE AQUI -->
+        <div class="placeholder">
+            Cole aqui o código da aba <b>Performance e Indicadores</b>
+        </div>
+
+    </div>
 </div>
 
-<div class="titulo">Indicadores de Performance</div>
-
-<div class="container-cards">
-<div class="card"><h3>Total de Cirurgias</h3><p id="totalCirurgias">...</p></div>
-<div class="card"><h3>Receita</h3><p id="receita">...</p></div>
-<div class="card"><h3>Custo</h3><p id="custo">...</p></div>
-<div class="card"><h3>Resultado</h3><p id="resultado">...</p></div>
-</div>
-
-<div class="grafico-container">
-<canvas id="graficoMensal"></canvas>
-</div>
-
-<div class="donut-container">
-<h3 style="color:white">Curva ABC Cirurgia</h3>
-<table id="tabelaABC"></table>
-</div>
-
-</div>
-
-<!-- ===== ABA 2 ===== -->
+<!-- ABA 2 -->
 <div id="aba2" class="tab-content">
-<h2>Conciliação Bancária</h2>
-<p>👉 Cole aqui seu HTML de conciliação</p>
+    <div class="dashboard-container">
+
+        <!-- COLE AQUI -->
+        <div class="placeholder">
+            Cole aqui o código da aba <b>Conciliação Bancária</b>
+        </div>
+
+    </div>
 </div>
 
-<!-- ===== ABA 3 ===== -->
+<!-- ABA 3 -->
 <div id="aba3" class="tab-content">
-<h2>Fluxo de Caixa Projetado</h2>
-<p>👉 Cole aqui seu HTML de fluxo projetado</p>
+    <div class="dashboard-container">
+
+        <!-- COLE AQUI -->
+        <div class="placeholder">
+            Cole aqui o código da aba <b>Fluxo de Caixa Projetado</b>
+        </div>
+
+    </div>
 </div>
 
-<!-- ===== ABA 4 ===== -->
+<!-- ABA 4 -->
 <div id="aba4" class="tab-content">
-<h2>Projetado x Realizado</h2>
-<p>👉 Vamos construir juntos depois</p>
+    <div class="dashboard-container">
+
+        <!-- COLE AQUI -->
+        <div class="placeholder">
+            Cole aqui o código da aba <b>Fluxo de Caixa Projetado vs Realizado</b>
+        </div>
+
+    </div>
 </div>
 
+<!-- ===== SCRIPT ===== -->
 <script>
-
-/* ===== TROCA DE ABAS ===== */
 function abrirAba(id, botao){
+
+    // esconder tudo
     document.querySelectorAll(".tab-content")
         .forEach(el => el.classList.remove("active"));
 
     document.querySelectorAll(".tab-button")
         .forEach(el => el.classList.remove("active"));
 
+    // mostrar selecionada
     document.getElementById(id).classList.add("active");
     botao.classList.add("active");
 }
-
-/* ===== DADOS ===== */
-const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&output=csv";
-
-function parseCSV(t){
-    const l=[];let r=[],v='',q=false;
-    for(let c of t){
-        if(c=='"')q=!q;
-        else if(c==','&&!q){r.push(v);v=''}
-        else if((c=='\n'||c=='\r')&&!q){
-            if(v||r.length){r.push(v);l.push(r);r=[];v=''}
-        } else v+=c;
-    }
-    if(v||r.length){r.push(v);l.push(r)}
-    return l;
-}
-
-function br(v){
-    return parseFloat(v?.replace(/\./g,'').replace(',','.'))||0;
-}
-
-fetch(url).then(r=>r.text()).then(data=>{
-const linhas=parseCSV(data);
-
-let totalCirurgias = new Set();
-let receita=0, custo=0;
-let mapa = {};
-
-linhas.slice(1).forEach(l=>{
-    let vale=l[2];
-    let mes=l[5];
-    let rec=br(l[27]);
-    let cus=br(l[29]);
-
-    if(vale) totalCirurgias.add(vale);
-
-    receita+=rec;
-    custo+=cus;
-
-    if(mes){
-        if(!mapa[mes]) mapa[mes]={rec:0,cus:0};
-        mapa[mes].rec+=rec;
-        mapa[mes].cus+=cus;
-    }
-});
-
-document.getElementById("totalCirurgias").innerText = totalCirurgias.size;
-document.getElementById("receita").innerText = receita.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-document.getElementById("custo").innerText = custo.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-document.getElementById("resultado").innerText = (receita-custo).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-
-/* ===== GRÁFICO ===== */
-new Chart(document.getElementById("graficoMensal"),{
-type:'bar',
-data:{
-labels:Object.keys(mapa),
-datasets:[
-{label:"Receita",data:Object.values(mapa).map(v=>v.rec)},
-{label:"Custo",data:Object.values(mapa).map(v=>v.cus)}
-]
-}
-});
-
-/* ===== ABC ===== */
-let tabela = "<tr><th>Tipo</th><th>Resultado</th></tr>";
-
-linhas.slice(1).forEach(l=>{
-    tabela += `<tr>
-    <td>${l[15]}</td>
-    <td>${br(l[27]) - br(l[29])}</td>
-    </tr>`;
-});
-
-document.getElementById("tabelaABC").innerHTML = tabela;
-
-});
-
 </script>
 
 </body>
