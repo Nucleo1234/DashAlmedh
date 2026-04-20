@@ -91,7 +91,7 @@ Dashboard Financeiro e Operacional
 
 <!-- ===== ABAS ===== -->
 <div class="tabs">
-    <button class="tab-button active" onclick="window.location.href='aba1.html'">
+    <button class="tab-button active" onclick="openTab(event, 'aba1')">Performance e Indicadores</button>
     <button class="tab-button" onclick="openTab(event, 'aba2')">Conciliação Bancária</button>
     <button class="tab-button" onclick="openTab(event, 'aba3')">Fluxo de Caixa Projetado</button>
     <button class="tab-button" onclick="openTab(event, 'aba4')">Fluxo Projetado vs Realizado</button>
@@ -100,12 +100,10 @@ Dashboard Financeiro e Operacional
 <!-- ===== ABA 1 ===== -->
 <div id="aba1" class="tab-content active">
     <div class="aba-box">
-
-        <!-- 👉 COLE SEU DASHBOARD AQUI (SEM <body> e SEM <style>) -->
         <iframe src="aba1.html" style="width:100%; height:1500px; border:none;"></iframe>
-
     </div>
 </div>
+
 
 <!-- ===== ABA 2 ===== -->	
 <div id="aba2" class="tab-content">
@@ -116,13 +114,15 @@ Dashboard Financeiro e Operacional
 
 <!-- ===== ABA 3 ===== -->
 <div id="aba3" class="tab-content">
-    <iframe src="aba3.html" style="width:100%; height:1500px; border:none;"></iframe>
+    <div class="aba-box">
+        <iframe src="aba3.html" style="width:100%; height:1500px; border:none;"></iframe>
     </div>
 </div>
 
 <!-- ===== ABA 4 ===== -->
 <div id="aba4" class="tab-content">
-    <iframe src="aba4.html" style="width:100%; height:1500px; border:none;"></iframe>
+    <div class="aba-box">
+        <iframe src="aba4.html" style="width:100%; height:1500px; border:none;"></iframe>
     </div>
 </div>
 
