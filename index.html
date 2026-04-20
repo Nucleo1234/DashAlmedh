@@ -7,132 +7,86 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body {
-    font-family: Arial;
-    margin: 0;
-    background: #eef3f7;
-}
+body { font-family: Arial; margin:0; background:#eef3f7; }
 
-/* ===== MENU ABAS ===== */
+/* ===== ABAS ===== */
 .tabs {
-    display: flex;
-    background: #0f3b4c;
+    display:flex;
+    background:#0f3b4c;
 }
-
 .tab {
-    padding: 14px 20px;
-    color: white;
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
+    padding:14px 20px;
+    color:white;
+    cursor:pointer;
 }
-
 .tab.active {
-    background: #1f5e75;
-    border-bottom: 3px solid #00cfff;
+    background:#1f5e75;
+    border-bottom:3px solid #00cfff;
 }
 
 /* ===== CONTEÚDO ===== */
-.tab-content {
-    display: none;
-    padding: 20px;
-}
+.tab-content { display:none; padding:20px; }
+.tab-content.active { display:block; }
 
-.tab-content.active {
-    display: block;
-}
-
-/* ===== SEU ESTILO ORIGINAL ===== */
+/* ===== ESTILO DASH ===== */
 .topo { font-size:13px; font-weight:bold; }
-
-.titulo {
-    text-align:center;
-    font-size:22px;
-    font-weight:bold;
-    margin-top:20px;
-}
+.titulo { text-align:center; font-size:22px; margin-top:20px; }
 
 .container-cards {
-    display:flex;
-    justify-content:center;
-    gap:15px;
-    margin-top:20px;
+    display:flex; justify-content:center; gap:15px; margin-top:20px;
 }
-
 .card {
-    width:150px;
-    background:white;
-    padding:10px;
-    border-radius:10px;
-    text-align:center;
+    width:150px; background:white; padding:10px;
+    border-radius:10px; text-align:center;
 }
 
 .grafico-container {
-    width:90%;
-    height:400px;
-    margin:40px auto;
-    background:#0f3b4c;
-    padding:20px;
-    border-radius:10px;
+    width:90%; height:400px; margin:40px auto;
+    background:#0f3b4c; padding:20px; border-radius:10px;
 }
 
 .donut-container {
-    width:90%;
-    margin:40px auto;
-    background:#0f3b4c;
-    padding:20px;
-    border-radius:10px;
-    display:flex;
-    gap:30px;
+    width:90%; margin:40px auto;
+    background:#0f3b4c; padding:20px;
+    border-radius:10px; display:flex; gap:30px;
 }
-
-.donut-chart {
-    width:250px;
-}
-
-.legenda { color:white; font-size:12px; }
 
 table {
-    width:100%;
-    border-collapse:collapse;
-    font-size:11px;
-    color:white;
+    width:100%; border-collapse:collapse;
+    font-size:11px; color:white;
 }
-
 th, td {
     padding:6px;
     border:1px solid rgba(255,255,255,0.3);
 }
-
-th {
-    background: rgba(255,255,255,0.1);
-}
+th { background:rgba(255,255,255,0.1); }
 </style>
 </head>
 
 <body>
 
-<!-- ===== ABAS ===== -->
+<!-- ===== MENU ===== -->
 <div class="tabs">
     <div class="tab active" onclick="trocarAba(1)">Performance e Indicadores</div>
     <div class="tab" onclick="trocarAba(2)">Conciliação Bancária</div>
     <div class="tab" onclick="trocarAba(3)">Fluxo de Caixa Projetado</div>
-    <div class="tab" onclick="trocarAba(4)">Fluxo Projetado vs Realizado</div>
+    <div class="tab" onclick="trocarAba(4)">Projetado vs Realizado</div>
 </div>
 
 <!-- ===== ABA 1 ===== -->
 <div id="aba1" class="tab-content active">
 
 <div class="topo">
-Data de Atualização: <span id="dataAtualizacao">...</span>
+Data de Atualização: <span id="dataAtualizacao"></span>
 </div>
 
 <div class="titulo">Indicadores de Performance</div>
 
 <div class="container-cards">
-<div class="card"><h3>Total</h3><p id="totalCirurgias">...</p></div>
-<div class="card"><h3>Receita</h3><p id="receita">...</p></div>
-<div class="card"><h3>Custo</h3><p id="custo">...</p></div>
-<div class="card"><h3>Resultado</h3><p id="resultado">...</p></div>
+<div class="card"><h3>Total</h3><p id="totalCirurgias"></p></div>
+<div class="card"><h3>Receita</h3><p id="receita"></p></div>
+<div class="card"><h3>Custo</h3><p id="custo"></p></div>
+<div class="card"><h3>Resultado</h3><p id="resultado"></p></div>
 </div>
 
 <div class="grafico-container">
@@ -140,64 +94,52 @@ Data de Atualização: <span id="dataAtualizacao">...</span>
 </div>
 
 <div class="donut-container">
-    <div>
-        <canvas id="graficoDonut"></canvas>
-        <div id="legendaCustom" class="legenda"></div>
-    </div>
-    <div>
-        <h3 style="color:white">Faturar</h3>
-        <table id="tabela50"></table>
-    </div>
+<canvas id="graficoDonut"></canvas>
+<div>
+<h3 style="color:white">Faturar</h3>
+<table id="tabela50"></table>
+</div>
 </div>
 
 <div class="donut-container">
-    <div>
-        <canvas id="graficoDonutReceber"></canvas>
-        <div id="legendaReceber" class="legenda"></div>
-    </div>
-    <div>
-        <h3 style="color:white">Receber</h3>
-        <table id="tabelaReceber"></table>
-    </div>
+<canvas id="graficoDonutReceber"></canvas>
+<div>
+<h3 style="color:white">Receber</h3>
+<table id="tabelaReceber"></table>
+</div>
 </div>
 
 <div class="donut-container">
-    <div style="width:100%">
-        <h3 style="color:white">Curva ABC</h3>
-        <table id="tabelaABC"></table>
-    </div>
+<div style="width:100%">
+<h3 style="color:white">Curva ABC</h3>
+<table id="tabelaABC"></table>
+</div>
 </div>
 
 </div>
 
-<!-- ===== OUTRAS ABAS (VAZIAS) ===== -->
-<div id="aba2" class="tab-content">
-<h2>Conciliação Bancária</h2>
-</div>
-
-<div id="aba3" class="tab-content">
-<h2>Fluxo de Caixa Projetado</h2>
-</div>
-
-<div id="aba4" class="tab-content">
-<h2>Projetado vs Realizado</h2>
-</div>
+<!-- ===== OUTRAS ABAS ===== -->
+<div id="aba2" class="tab-content"><h2>Conciliação Bancária</h2></div>
+<div id="aba3" class="tab-content"><h2>Fluxo de Caixa Projetado</h2></div>
+<div id="aba4" class="tab-content"><h2>Projetado vs Realizado</h2></div>
 
 <!-- ===== SCRIPT ABAS ===== -->
 <script>
 function trocarAba(n){
     document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
     document.querySelectorAll(".tab-content").forEach(c=>c.classList.remove("active"));
-
     document.querySelectorAll(".tab")[n-1].classList.add("active");
     document.getElementById("aba"+n).classList.add("active");
 }
 </script>
 
-<!-- ===== SEU SCRIPT ORIGINAL (COLADO DIRETO) ===== -->
+<!-- ===== SEU DASHBOARD COMPLETO ===== -->
 <script>
 
-/* COLEI SEU SCRIPT AQUI SEM ALTERAR LÓGICA */
+/* 🔥 TUDO INICIA SÓ DEPOIS DA PÁGINA CARREGAR */
+window.onload = function(){
+
+/* ===== SEU SCRIPT INTEGRADO ===== */
 
 const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&output=csv";
 
@@ -223,10 +165,27 @@ const linhas=parseCSV(data);
 
 document.getElementById("dataAtualizacao").innerText = linhas[1][0];
 
-let total = linhas.length-1;
-document.getElementById("totalCirurgias").innerText = total;
+const vales = linhas.slice(1).map(l => l[2]).filter(v => v);
+document.getElementById("totalCirurgias").innerText = [...new Set(vales)].length;
+
+let recT=0,cusT=0;
+
+linhas.slice(1).forEach(l=>{
+recT+=br(l[27]);
+cusT+=br(l[29]);
+});
+
+const f=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+
+document.getElementById("receita").innerText=f(recT);
+document.getElementById("custo").innerText=f(cusT);
+document.getElementById("resultado").innerText=f(recT-cusT);
 
 });
+
+/* ⚠️ Aqui você pode colar depois os outros scripts se quiser */
+
+};
 
 </script>
 
