@@ -2,36 +2,32 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Dashboard Financeiro</title>
+<title>Dashboard Corporativo</title>
 
 <style>
 
 /* ===== RESET ===== */
-* {
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
 body {
-    font-family: Arial;
+    margin:0;
+    font-family: Arial, sans-serif;
     background:#f4f7fb;
 }
 
 /* ===== HEADER ===== */
 .header {
-    background:#184a5a;
+    background:#0f3b4c;
     color:white;
     padding:15px 25px;
-    font-size:20px;
+    font-size:18px;
     font-weight:bold;
 }
 
-/* ===== MENU ABAS ===== */
+/* ===== MENU DE ABAS ===== */
 .tabs {
     display:flex;
-    background:white;
-    border-bottom:2px solid #ddd;
+    background:#ffffff;
+    border-bottom:2px solid #e0e0e0;
+    padding-left:20px;
 }
 
 .tab-button {
@@ -39,18 +35,20 @@ body {
     cursor:pointer;
     border:none;
     background:none;
-    font-weight:bold;
+    font-size:14px;
+    font-weight:600;
     color:#555;
+    border-bottom:3px solid transparent;
     transition:0.3s;
 }
 
 .tab-button:hover {
-    background:#f1f1f1;
+    color:#0f3b4c;
 }
 
 .tab-button.active {
-    color:#184a5a;
-    border-bottom:3px solid #184a5a;
+    color:#0f3b4c;
+    border-bottom:3px solid #0f3b4c;
 }
 
 /* ===== CONTEÚDO ===== */
@@ -63,21 +61,21 @@ body {
     display:block;
 }
 
-/* ===== CONTAINER PADRÃO ===== */
-.aba-box {
-    background:white;
+/* ===== CONTAINER INTERNO (onde você cola os dashboards) ===== */
+.dashboard-container {
+    background:#ffffff;
     border-radius:10px;
     padding:20px;
-    box-shadow:0 2px 6px rgba(0,0,0,0.1);
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
 }
 
-/* ===== PLACEHOLDER ===== */
 .placeholder {
     text-align:center;
-    color:#888;
+    color:#999;
     padding:40px;
-    border:2px dashed #ccc;
-    border-radius:10px;
+    border:2px dashed #ddd;
+    border-radius:8px;
+    font-size:14px;
 }
 
 </style>
@@ -85,67 +83,95 @@ body {
 
 <body>
 
+<!-- ===== TOPO ===== -->
 <div class="header">
-Dashboard Financeiro e Operacional
+    Dashboard Financeiro e Operacional
 </div>
 
 <!-- ===== ABAS ===== -->
 <div class="tabs">
-    <button class="tab-button active" onclick="openTab(event, 'aba1')">Performance e Indicadores</button>
-    <button class="tab-button" onclick="openTab(event, 'aba2')">Conciliação Bancária</button>
-    <button class="tab-button" onclick="openTab(event, 'aba3')">Fluxo de Caixa Projetado</button>
-    <button class="tab-button" onclick="openTab(event, 'aba4')">Fluxo Projetado vs Realizado</button>
+    <button class="tab-button active" onclick="abrirAba('aba1', this)">
+        Performance e Indicadores
+    </button>
+
+    <button class="tab-button" onclick="abrirAba('aba2', this)">
+        Conciliação Bancária
+    </button>
+
+    <button class="tab-button" onclick="abrirAba('aba3', this)">
+        Fluxo de Caixa Projetado
+    </button>
+
+    <button class="tab-button" onclick="abrirAba('aba4', this)">
+        Fluxo de Caixa Projetado vs Realizado
+    </button>
 </div>
 
-<!-- ===== ABA 1 ===== -->
+<!-- ===== CONTEÚDO DAS ABAS ===== -->
+
+<!-- ABA 1 -->
 <div id="aba1" class="tab-content active">
-    <div class="aba-box">
+    <div class="dashboard-container">
 
-        <!-- 👉 COLE SEU DASHBOARD AQUI (SEM <body> e SEM <style>) -->
-        <iframe src="aba1.html" style="width:100%; height:1500px; border:none;"></iframe>
+        <!-- COLE SEU DASHBOARD DE PERFORMANCE AQUI -->
+        <div class="placeholder">
+            Cole aqui o código da aba <b>Performance e Indicadores</b>
+        </div>
 
     </div>
 </div>
 
-<!-- ===== ABA 2 ===== -->	
+<!-- ABA 2 -->
 <div id="aba2" class="tab-content">
-    <div class="aba-box">
-        <iframe src="aba1.html" style="width:100%; height:1500px; border:none;"></iframe>
+    <div class="dashboard-container">
+
+        <!-- COLE AQUI -->
+        <div class="placeholder">
+            Cole aqui o código da aba <b>Conciliação Bancária</b>
+        </div>
+
     </div>
 </div>
 
-<!-- ===== ABA 3 ===== -->
+<!-- ABA 3 -->
 <div id="aba3" class="tab-content">
-    <iframe src="aba3.html" style="width:100%; height:1500px; border:none;"></iframe>
+    <div class="dashboard-container">
+
+        <!-- COLE AQUI -->
+        <div class="placeholder">
+            Cole aqui o código da aba <b>Fluxo de Caixa Projetado</b>
+        </div>
+
     </div>
 </div>
 
-<!-- ===== ABA 4 ===== -->
+<!-- ABA 4 -->
 <div id="aba4" class="tab-content">
-    <iframe src="aba4.html" style="width:100%; height:1500px; border:none;"></iframe>
+    <div class="dashboard-container">
+
+        <!-- COLE AQUI -->
+        <div class="placeholder">
+            Cole aqui o código da aba <b>Fluxo de Caixa Projetado vs Realizado</b>
+        </div>
+
     </div>
 </div>
 
+<!-- ===== SCRIPT ===== -->
 <script>
+function abrirAba(id, botao){
 
-function openTab(evt, tabName) {
+    // esconder tudo
+    document.querySelectorAll(".tab-content")
+        .forEach(el => el.classList.remove("active"));
 
-    let i, tabcontent, tabbuttons;
+    document.querySelectorAll(".tab-button")
+        .forEach(el => el.classList.remove("active"));
 
-    tabcontent = document.getElementsByClassName("tab-content");
-    for (i = 0; i < tabcontent.length; i++) {
-        tabcontent[i].classList.remove("active");
-    }
-
-    tabbuttons = document.getElementsByClassName("tab-button");
-    for (i = 0; i < tabbuttons.length; i++) {
-        tabbuttons[i].classList.remove("active");
-    }
-
-    document.getElementById(tabName).classList.add("active");
-    evt.currentTarget.classList.add("active");
+    // mostrar selecionada
+    document.getElementById(id).classList.add("active");
+    botao.classList.add("active");
 }
-
 </script>
 
 </body>
