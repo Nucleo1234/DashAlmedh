@@ -8,63 +8,52 @@
 
 <style>
 
+/* ===== MENU DE ABAS PROFISSIONAL ===== */
 .tabs {
     display:flex;
-    gap:15px;
+    gap:5px;
     margin-bottom:20px;
+    background:#0f3b4c;
+    padding:5px;
+    border-radius:10px;
 }
 
 .tab-btn {
-    background:#1f4e5f;
-    color:white;
-    padding:10px 20px;
-    border-radius:8px;
-    cursor:pointer;
+    flex:1;
+    padding:12px;
     border:none;
-    font-size:14px;
+    cursor:pointer;
+    background:transparent;
+    color:#cfe8ff;
+    font-weight:bold;
+    border-radius:8px;
     transition:0.3s;
 }
 
 .tab-btn:hover {
-    background:#2f6f86;
+    background:rgba(255,255,255,0.1);
 }
 
 .tab-btn.active {
-    background:#00a8cc;
+    background:white;
+    color:#0f3b4c;
 }
 
-/* conteúdo das abas */
+/* ===== CONTEÚDO ===== */
 .tab-content {
     display:none;
+    animation:fadeIn 0.3s ease-in-out;
 }
 
 .tab-content.active {
     display:block;
 }
 
-.abas {
-    display:flex;
-    gap:10px;
-    margin-bottom:20px;
+/* animação suave */
+@keyframes fadeIn {
+    from { opacity:0; transform:translateY(5px); }
+    to { opacity:1; transform:translateY(0); }
 }
-
-.abas button {
-    padding:10px 15px;
-    border:none;
-    background:#0f3b4c;
-    color:white;
-    cursor:pointer;
-    border-radius:5px;
-}
-
-.aba {
-    display:none;
-}
-
-.aba.ativa {
-    display:block;
-}
-
 
 
 
@@ -203,24 +192,34 @@ body { font-family: Arial; background:#cfe8ff; padding:20px; }
     <button class="tab-btn" onclick="trocarAba('aba2', this)">Conciliação</button>
     <button class="tab-btn" onclick="trocarAba('aba3', this)">Fluxo Projetado</button>
     <button class="tab-btn" onclick="trocarAba('aba4', this)">Proj x Realizado</button>
+	
+
+<div class="tabs">
+    <button class="tab-btn active" onclick="trocarAba('aba1', this)">Performance</button>
+    <button class="tab-btn" onclick="trocarAba('aba2', this)">Conciliação</button>
+    <button class="tab-btn" onclick="trocarAba('aba3', this)">Fluxo Projetado</button>
+    <button class="tab-btn" onclick="trocarAba('aba4', this)">Proj x Realizado</button>
 </div>
 
+<!-- ABA 1 -->
 <div id="aba1" class="tab-content active">
-    <!-- SEU DASHBOARD ATUAL AQUI -->
+    <!-- SEU DASHBOARD COMPLETO AQUI -->
 </div>
 
+<!-- ABA 2 -->
 <div id="aba2" class="tab-content">
-    <!-- código da conciliação -->
+    <!-- conteúdo -->
 </div>
 
+<!-- ABA 3 -->
 <div id="aba3" class="tab-content">
-    <!-- fluxo projetado -->
+    <!-- conteúdo -->
 </div>
 
+<!-- ABA 4 -->
 <div id="aba4" class="tab-content">
-    <!-- vamos construir depois -->
+    <!-- conteúdo -->
 </div>
-
 
 
 
@@ -287,21 +286,25 @@ Data de Atualização: <span id="dataAtualizacao">...</span>
 
 function trocarAba(id, botao){
 
-    // esconder tudo
-    document.querySelectorAll('.tab-content')
-        .forEach(el => el.classList.remove('active'));
+    // ESCONDE TODAS AS ABAS
+    document.querySelectorAll('.tab-content').forEach(el => {
+        el.style.display = "none";
+        el.classList.remove('active');
+    });
 
-    // remover destaque dos botões
-    document.querySelectorAll('.tab-btn')
-        .forEach(btn => btn.classList.remove('active'));
+    // REMOVE ATIVO DOS BOTÕES
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
 
-    // mostrar aba clicada
-    document.getElementById(id).classList.add('active');
+    // MOSTRA SOMENTE A ABA CLICADA
+    const aba = document.getElementById(id);
+    aba.style.display = "block";
+    aba.classList.add('active');
 
-    // destacar botão
+    // ATIVA BOTÃO
     botao.classList.add('active');
 }
-
 
 
 /* ===== SEU SCRIPT ORIGINAL (INALTERADO) ===== */
