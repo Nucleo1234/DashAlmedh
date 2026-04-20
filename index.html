@@ -4,72 +4,79 @@
 <meta charset="UTF-8">
 <title>Dashboard Financeiro</title>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <style>
+
+/* ===== RESET ===== */
+* {
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
 body {
     font-family: Arial;
-    margin:0;
-    background:#f4f6f9;
+    background:#f4f7fb;
 }
 
-/* ===== MENU ===== */
-.menu {
-    display:flex;
-    background:#1f2937;
-}
-
-.menu button {
-    flex:1;
-    padding:15px;
-    border:none;
-    background:none;
+/* ===== HEADER ===== */
+.header {
+    background:#184a5a;
     color:white;
-    cursor:pointer;
+    padding:15px 25px;
+    font-size:20px;
     font-weight:bold;
 }
 
-.menu button.active {
-    background:#2563eb;
+/* ===== MENU ABAS ===== */
+.tabs {
+    display:flex;
+    background:white;
+    border-bottom:2px solid #ddd;
 }
 
-/* ===== ABAS ===== */
-.aba {
+.tab-button {
+    padding:14px 20px;
+    cursor:pointer;
+    border:none;
+    background:none;
+    font-weight:bold;
+    color:#555;
+    transition:0.3s;
+}
+
+.tab-button:hover {
+    background:#f1f1f1;
+}
+
+.tab-button.active {
+    color:#184a5a;
+    border-bottom:3px solid #184a5a;
+}
+
+/* ===== CONTEÚDO ===== */
+.tab-content {
     display:none;
     padding:20px;
 }
 
-/* ===== ABA 1 ESTILO ===== */
-.topo { font-size:13px; font-weight:bold; }
-
-.titulo {
-    text-align:center;
-    font-size:22px;
-    font-weight:bold;
-    margin-top:20px;
+.tab-content.active {
+    display:block;
 }
 
-.container-cards {
-    display:flex;
-    justify-content:center;
-    gap:15px;
-    margin-top:20px;
-}
-
-.card {
-    width:150px;
+/* ===== CONTAINER PADRÃO ===== */
+.aba-box {
     background:white;
-    padding:10px;
     border-radius:10px;
-    text-align:center;
+    padding:20px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.1);
 }
 
-.grafico-container {
-    width:90%;
-    height:400px;
-    margin:30px auto;
-    background:#0f3b4c;
-    padding:20px;
+/* ===== PLACEHOLDER ===== */
+.placeholder {
+    text-align:center;
+    color:#888;
+    padding:40px;
+    border:2px dashed #ccc;
     border-radius:10px;
 }
 
@@ -78,149 +85,236 @@ body {
 
 <body>
 
-<!-- MENU -->
-<div class="menu">
-    <button onclick="abrirAba('aba1', this)" class="active">Performance e Indicadores</button>
-    <button onclick="abrirAba('aba2', this)">Conciliação Bancária</button>
-    <button onclick="abrirAba('aba3', this)">Fluxo de Caixa Projetado</button>
-    <button onclick="abrirAba('aba4', this)">Projetado vs Realizado</button>
+<div class="header">
+Dashboard Financeiro e Operacional
+</div>
+
+<!-- ===== ABAS ===== -->
+<div class="tabs">
+    <button class="tab-button active" onclick="openTab(event, 'aba1')">Performance e Indicadores</button>
+    <button class="tab-button" onclick="openTab(event, 'aba2')">Conciliação Bancária</button>
+    <button class="tab-button" onclick="openTab(event, 'aba3')">Fluxo de Caixa Projetado</button>
+    <button class="tab-button" onclick="openTab(event, 'aba4')">Fluxo Projetado vs Realizado</button>
 </div>
 
 <!-- ===== ABA 1 ===== -->
-<div id="aba1" class="aba" style="display:block;">
+<div id="aba1" class="tab-content active">
+    <div class="aba-box">
 
-<div class="topo">
-Data de Atualização: <span id="dataAtualizacao">...</span>
+        <!-- 👉 COLE SEU DASHBOARD AQUI (SEM <body> e SEM <style>) -->
+        <div class="placeholder">
+            Cole aqui o código da aba <b>Performance e Indicadores</b>
+        </div>
+
+    </div>
 </div>
 
-<div class="titulo">Indicadores de Performance</div>
-
-<div class="container-cards">
-<div class="card"><h3>Total</h3><p id="totalCirurgias">...</p></div>
-<div class="card"><h3>Receita</h3><p id="receita">...</p></div>
-<div class="card"><h3>Custo</h3><p id="custo">...</p></div>
-<div class="card"><h3>Resultado</h3><p id="resultado">...</p></div>
+<!-- ===== ABA 2 ===== -->
+<div id="aba2" class="tab-content">
+    <div class="aba-box">
+        <div class="placeholder">
+            Cole aqui o código da aba <b>Conciliação Bancária</b>
+        </div>
+    </div>
 </div>
 
-<div class="grafico-container">
-<canvas id="graficoMensal"></canvas>
+<!-- ===== ABA 3 ===== -->
+<div id="aba3" class="tab-content">
+    <div class="aba-box">
+        <div class="placeholder">
+            Cole aqui o código da aba <b>Fluxo de Caixa Projetado</b>
+        </div>
+    </div>
 </div>
 
-<div class="grafico-container">
-<canvas id="graficoDonut"></canvas>
+<!-- ===== ABA 4 ===== -->
+<div id="aba4" class="tab-content">
+    <div class="aba-box">
+        <div class="placeholder">
+            Vamos construir essa juntos 🚀
+        </div>
+    </div>
 </div>
-
-</div>
-
-<!-- OUTRAS ABAS (VAZIAS POR ENQUANTO) -->
-<div id="aba2" class="aba">Cole aqui Conciliação</div>
-<div id="aba3" class="aba">Cole aqui Fluxo Projetado</div>
-<div id="aba4" class="aba">Cole aqui Comparação</div>
 
 <script>
 
-/* ===== CONTROLE DE ABAS ===== */
-function abrirAba(id, botao){
-    document.querySelectorAll('.aba').forEach(a=>a.style.display='none');
-    document.querySelectorAll('.menu button').forEach(b=>b.classList.remove('active'));
+function openTab(evt, tabName) {
 
-    document.getElementById(id).style.display='block';
-    botao.classList.add('active');
+    let i, tabcontent, tabbuttons;
 
-    if(id === 'aba1' && !window.carregado){
-        carregarDashboard();
-        window.carregado = true;
-    }
-}
-
-/* ===== DASHBOARD ===== */
-function carregarDashboard(){
-
-const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&output=csv";
-
-function parseCSV(t){
-    const l=[];let r=[],v='',q=false;
-    for(let c of t){
-        if(c=='"')q=!q;
-        else if(c==','&&!q){r.push(v);v=''}
-        else if((c=='\n'||c=='\r')&&!q){
-            if(v||r.length){r.push(v);l.push(r);r=[];v=''}
-        } else v+=c;
-    }
-    if(v||r.length){r.push(v);l.push(r)}
-    return l;
-}
-
-function br(v){
-    return parseFloat(v?.replace(/\./g,'').replace(',','.'))||0;
-}
-
-function mesAno(d){
-    if(!d||!d.includes("/"))return "";
-    let p=d.split("/");
-    return p[1]+"/"+p[2].slice(-2);
-}
-
-fetch(url).then(r=>r.text()).then(data=>{
-
-const linhas=parseCSV(data);
-
-document.getElementById("dataAtualizacao").innerText = linhas[1][0];
-
-let map={},recT=0,cusT=0;
-let mapPizza={};
-
-linhas.slice(1).forEach(l=>{
-    let mes=mesAno(l[5]);
-    let rec=br(l[27]);
-    let cus=br(l[29]);
-
-    recT+=rec;
-    cusT+=cus;
-
-    if(mes){
-        if(!map[mes]) map[mes]={rec:0,cus:0};
-        map[mes].rec+=rec;
-        map[mes].cus+=cus;
+    tabcontent = document.getElementsByClassName("tab-content");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].classList.remove("active");
     }
 
-    let situacao=l[4];
-    if(!mapPizza[situacao]) mapPizza[situacao]=0;
-    mapPizza[situacao]++;
-});
+    tabbuttons = document.getElementsByClassName("tab-button");
+    for (i = 0; i < tabbuttons.length; i++) {
+        tabbuttons[i].classList.remove("active");
+    }
 
-const f=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-
-document.getElementById("receita").innerText=f(recT);
-document.getElementById("custo").innerText=f(cusT);
-document.getElementById("resultado").innerText=f(recT-cusT);
-document.getElementById("totalCirurgias").innerText=linhas.length-1;
-
-/* ===== GRÁFICO ===== */
-const meses=Object.keys(map);
-
-new Chart(document.getElementById("graficoMensal"),{
-type:'bar',
-data:{
-labels:meses,
-datasets:[
-{data:meses.map(m=>map[m].cus), backgroundColor:'#ff7b7b'},
-{data:meses.map(m=>map[m].rec), backgroundColor:'#4CAF50'}
-]
+    document.getElementById(tabName).classList.add("active");
+    evt.currentTarget.classList.add("active");
 }
-});
 
-/* ===== DONUT ===== */
-new Chart(document.getElementById("graficoDonut"),{
-type:'doughnut',
-data:{
-labels:Object.keys(mapPizza),
-datasets:[{data:Object.values(mapPizza)}]
+</script>
+
+</body>
+</html><!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard Financeiro</title>
+
+<style>
+
+/* ===== RESET ===== */
+* {
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
 }
-});
 
-});
+body {
+    font-family: Arial;
+    background:#f4f7fb;
+}
 
+/* ===== HEADER ===== */
+.header {
+    background:#184a5a;
+    color:white;
+    padding:15px 25px;
+    font-size:20px;
+    font-weight:bold;
+}
+
+/* ===== MENU ABAS ===== */
+.tabs {
+    display:flex;
+    background:white;
+    border-bottom:2px solid #ddd;
+}
+
+.tab-button {
+    padding:14px 20px;
+    cursor:pointer;
+    border:none;
+    background:none;
+    font-weight:bold;
+    color:#555;
+    transition:0.3s;
+}
+
+.tab-button:hover {
+    background:#f1f1f1;
+}
+
+.tab-button.active {
+    color:#184a5a;
+    border-bottom:3px solid #184a5a;
+}
+
+/* ===== CONTEÚDO ===== */
+.tab-content {
+    display:none;
+    padding:20px;
+}
+
+.tab-content.active {
+    display:block;
+}
+
+/* ===== CONTAINER PADRÃO ===== */
+.aba-box {
+    background:white;
+    border-radius:10px;
+    padding:20px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* ===== PLACEHOLDER ===== */
+.placeholder {
+    text-align:center;
+    color:#888;
+    padding:40px;
+    border:2px dashed #ccc;
+    border-radius:10px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="header">
+Dashboard Financeiro e Operacional
+</div>
+
+<!-- ===== ABAS ===== -->
+<div class="tabs">
+    <button class="tab-button active" onclick="openTab(event, 'aba1')">Performance e Indicadores</button>
+    <button class="tab-button" onclick="openTab(event, 'aba2')">Conciliação Bancária</button>
+    <button class="tab-button" onclick="openTab(event, 'aba3')">Fluxo de Caixa Projetado</button>
+    <button class="tab-button" onclick="openTab(event, 'aba4')">Fluxo Projetado vs Realizado</button>
+</div>
+
+<!-- ===== ABA 1 ===== -->
+<div id="aba1" class="tab-content active">
+    <div class="aba-box">
+
+        <!-- 👉 COLE SEU DASHBOARD AQUI (SEM <body> e SEM <style>) -->
+        <div class="placeholder">
+            Cole aqui o código da aba <b>Performance e Indicadores</b>
+        </div>
+
+    </div>
+</div>
+
+<!-- ===== ABA 2 ===== -->
+<div id="aba2" class="tab-content">
+    <div class="aba-box">
+        <div class="placeholder">
+            Cole aqui o código da aba <b>Conciliação Bancária</b>
+        </div>
+    </div>
+</div>
+
+<!-- ===== ABA 3 ===== -->
+<div id="aba3" class="tab-content">
+    <div class="aba-box">
+        <div class="placeholder">
+            Cole aqui o código da aba <b>Fluxo de Caixa Projetado</b>
+        </div>
+    </div>
+</div>
+
+<!-- ===== ABA 4 ===== -->
+<div id="aba4" class="tab-content">
+    <div class="aba-box">
+        <div class="placeholder">
+            Vamos construir essa juntos 🚀
+        </div>
+    </div>
+</div>
+
+<script>
+
+function openTab(evt, tabName) {
+
+    let i, tabcontent, tabbuttons;
+
+    tabcontent = document.getElementsByClassName("tab-content");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].classList.remove("active");
+    }
+
+    tabbuttons = document.getElementsByClassName("tab-button");
+    for (i = 0; i < tabbuttons.length; i++) {
+        tabbuttons[i].classList.remove("active");
+    }
+
+    document.getElementById(tabName).classList.add("active");
+    evt.currentTarget.classList.add("active");
 }
 
 </script>
