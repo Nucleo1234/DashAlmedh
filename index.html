@@ -81,7 +81,7 @@ body {
 
 /* ISOLAMENTO DA ABA 1 */
 .aba1 {
-    /*background: #cfe8ff;*/
+    
     padding: 20px;
     border-radius: 10px;
 }
@@ -98,7 +98,29 @@ body {
     width: 100%;
 }
 
+/* ===== ISOLAMENTO TOTAL DA ABA 1 ===== */
+.aba1 {
+    background: #cfe8ff;
+    padding: 20px;
+    border-radius: 10px;
+}
 
+/* impede o dashboard de quebrar a página */
+.aba1 * {
+    box-sizing: border-box;
+}
+
+/* corrige largura */
+.aba1 .grafico-container,
+.aba1 .donut-container {
+    width: 100% !important;
+}
+
+/* remove conflitos globais */
+body {
+    margin: 0;
+    background: #f4f7fb;
+}
 
 
 </style>
@@ -134,7 +156,8 @@ body {
 
 <!-- ABA 1 -->
 <div id="aba1" class="tab-content active">
-    <div class="dashboard-container aba1">
+    <div class="aba1">
+
 
         <!-- COLE SEU DASHBOARD DE PERFORMANCE AQUI -->
         
