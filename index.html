@@ -2,144 +2,139 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Dashboard Geral</title>
+<title>Dashboard Financeiro</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body { font-family: Arial; margin:0; background:#eef3f7; }
-
-/* ===== ABAS ===== */
-.tabs {
-    display:flex;
-    background:#0f3b4c;
+body {
+    font-family: Arial;
+    margin:0;
+    background:#f4f6f9;
 }
-.tab {
-    padding:14px 20px;
+
+/* ===== MENU ===== */
+.menu {
+    display:flex;
+    background:#1f2937;
+}
+
+.menu button {
+    flex:1;
+    padding:15px;
+    border:none;
+    background:none;
     color:white;
     cursor:pointer;
-}
-.tab.active {
-    background:#1f5e75;
-    border-bottom:3px solid #00cfff;
+    font-weight:bold;
 }
 
-/* ===== CONTEÚDO ===== */
-.tab-content { display:none; padding:20px; }
-.tab-content.active { display:block; }
+.menu button.active {
+    background:#2563eb;
+}
 
-/* ===== ESTILO DASH ===== */
+/* ===== ABAS ===== */
+.aba {
+    display:none;
+    padding:20px;
+}
+
+/* ===== ABA 1 ESTILO ===== */
 .topo { font-size:13px; font-weight:bold; }
-.titulo { text-align:center; font-size:22px; margin-top:20px; }
+
+.titulo {
+    text-align:center;
+    font-size:22px;
+    font-weight:bold;
+    margin-top:20px;
+}
 
 .container-cards {
-    display:flex; justify-content:center; gap:15px; margin-top:20px;
+    display:flex;
+    justify-content:center;
+    gap:15px;
+    margin-top:20px;
 }
+
 .card {
-    width:150px; background:white; padding:10px;
-    border-radius:10px; text-align:center;
+    width:150px;
+    background:white;
+    padding:10px;
+    border-radius:10px;
+    text-align:center;
 }
 
 .grafico-container {
-    width:90%; height:400px; margin:40px auto;
-    background:#0f3b4c; padding:20px; border-radius:10px;
+    width:90%;
+    height:400px;
+    margin:30px auto;
+    background:#0f3b4c;
+    padding:20px;
+    border-radius:10px;
 }
 
-.donut-container {
-    width:90%; margin:40px auto;
-    background:#0f3b4c; padding:20px;
-    border-radius:10px; display:flex; gap:30px;
-}
-
-table {
-    width:100%; border-collapse:collapse;
-    font-size:11px; color:white;
-}
-th, td {
-    padding:6px;
-    border:1px solid rgba(255,255,255,0.3);
-}
-th { background:rgba(255,255,255,0.1); }
 </style>
 </head>
 
 <body>
 
-<!-- ===== MENU ===== -->
-<div class="tabs">
-    <div class="tab active" onclick="trocarAba(1)">Performance e Indicadores</div>
-    <div class="tab" onclick="trocarAba(2)">Conciliação Bancária</div>
-    <div class="tab" onclick="trocarAba(3)">Fluxo de Caixa Projetado</div>
-    <div class="tab" onclick="trocarAba(4)">Projetado vs Realizado</div>
+<!-- MENU -->
+<div class="menu">
+    <button onclick="abrirAba('aba1', this)" class="active">Performance e Indicadores</button>
+    <button onclick="abrirAba('aba2', this)">Conciliação Bancária</button>
+    <button onclick="abrirAba('aba3', this)">Fluxo de Caixa Projetado</button>
+    <button onclick="abrirAba('aba4', this)">Projetado vs Realizado</button>
 </div>
 
 <!-- ===== ABA 1 ===== -->
-<div id="aba1" class="tab-content active">
+<div id="aba1" class="aba" style="display:block;">
 
 <div class="topo">
-Data de Atualização: <span id="dataAtualizacao"></span>
+Data de Atualização: <span id="dataAtualizacao">...</span>
 </div>
 
 <div class="titulo">Indicadores de Performance</div>
 
 <div class="container-cards">
-<div class="card"><h3>Total</h3><p id="totalCirurgias"></p></div>
-<div class="card"><h3>Receita</h3><p id="receita"></p></div>
-<div class="card"><h3>Custo</h3><p id="custo"></p></div>
-<div class="card"><h3>Resultado</h3><p id="resultado"></p></div>
+<div class="card"><h3>Total</h3><p id="totalCirurgias">...</p></div>
+<div class="card"><h3>Receita</h3><p id="receita">...</p></div>
+<div class="card"><h3>Custo</h3><p id="custo">...</p></div>
+<div class="card"><h3>Resultado</h3><p id="resultado">...</p></div>
 </div>
 
 <div class="grafico-container">
 <canvas id="graficoMensal"></canvas>
 </div>
 
-<div class="donut-container">
+<div class="grafico-container">
 <canvas id="graficoDonut"></canvas>
-<div>
-<h3 style="color:white">Faturar</h3>
-<table id="tabela50"></table>
-</div>
-</div>
-
-<div class="donut-container">
-<canvas id="graficoDonutReceber"></canvas>
-<div>
-<h3 style="color:white">Receber</h3>
-<table id="tabelaReceber"></table>
-</div>
-</div>
-
-<div class="donut-container">
-<div style="width:100%">
-<h3 style="color:white">Curva ABC</h3>
-<table id="tabelaABC"></table>
-</div>
 </div>
 
 </div>
 
-<!-- ===== OUTRAS ABAS ===== -->
-<div id="aba2" class="tab-content"><h2>Conciliação Bancária</h2></div>
-<div id="aba3" class="tab-content"><h2>Fluxo de Caixa Projetado</h2></div>
-<div id="aba4" class="tab-content"><h2>Projetado vs Realizado</h2></div>
+<!-- OUTRAS ABAS (VAZIAS POR ENQUANTO) -->
+<div id="aba2" class="aba">Cole aqui Conciliação</div>
+<div id="aba3" class="aba">Cole aqui Fluxo Projetado</div>
+<div id="aba4" class="aba">Cole aqui Comparação</div>
 
-<!-- ===== SCRIPT ABAS ===== -->
 <script>
-function trocarAba(n){
-    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-    document.querySelectorAll(".tab-content").forEach(c=>c.classList.remove("active"));
-    document.querySelectorAll(".tab")[n-1].classList.add("active");
-    document.getElementById("aba"+n).classList.add("active");
+
+/* ===== CONTROLE DE ABAS ===== */
+function abrirAba(id, botao){
+    document.querySelectorAll('.aba').forEach(a=>a.style.display='none');
+    document.querySelectorAll('.menu button').forEach(b=>b.classList.remove('active'));
+
+    document.getElementById(id).style.display='block';
+    botao.classList.add('active');
+
+    if(id === 'aba1' && !window.carregado){
+        carregarDashboard();
+        window.carregado = true;
+    }
 }
-</script>
 
-<!-- ===== SEU DASHBOARD COMPLETO ===== -->
-<script>
-
-/* 🔥 TUDO INICIA SÓ DEPOIS DA PÁGINA CARREGAR */
-window.onload = function(){
-
-/* ===== SEU SCRIPT INTEGRADO ===== */
+/* ===== DASHBOARD ===== */
+function carregarDashboard(){
 
 const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&output=csv";
 
@@ -160,19 +155,38 @@ function br(v){
     return parseFloat(v?.replace(/\./g,'').replace(',','.'))||0;
 }
 
+function mesAno(d){
+    if(!d||!d.includes("/"))return "";
+    let p=d.split("/");
+    return p[1]+"/"+p[2].slice(-2);
+}
+
 fetch(url).then(r=>r.text()).then(data=>{
+
 const linhas=parseCSV(data);
 
 document.getElementById("dataAtualizacao").innerText = linhas[1][0];
 
-const vales = linhas.slice(1).map(l => l[2]).filter(v => v);
-document.getElementById("totalCirurgias").innerText = [...new Set(vales)].length;
-
-let recT=0,cusT=0;
+let map={},recT=0,cusT=0;
+let mapPizza={};
 
 linhas.slice(1).forEach(l=>{
-recT+=br(l[27]);
-cusT+=br(l[29]);
+    let mes=mesAno(l[5]);
+    let rec=br(l[27]);
+    let cus=br(l[29]);
+
+    recT+=rec;
+    cusT+=cus;
+
+    if(mes){
+        if(!map[mes]) map[mes]={rec:0,cus:0};
+        map[mes].rec+=rec;
+        map[mes].cus+=cus;
+    }
+
+    let situacao=l[4];
+    if(!mapPizza[situacao]) mapPizza[situacao]=0;
+    mapPizza[situacao]++;
 });
 
 const f=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
@@ -180,12 +194,34 @@ const f=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 document.getElementById("receita").innerText=f(recT);
 document.getElementById("custo").innerText=f(cusT);
 document.getElementById("resultado").innerText=f(recT-cusT);
+document.getElementById("totalCirurgias").innerText=linhas.length-1;
+
+/* ===== GRÁFICO ===== */
+const meses=Object.keys(map);
+
+new Chart(document.getElementById("graficoMensal"),{
+type:'bar',
+data:{
+labels:meses,
+datasets:[
+{data:meses.map(m=>map[m].cus), backgroundColor:'#ff7b7b'},
+{data:meses.map(m=>map[m].rec), backgroundColor:'#4CAF50'}
+]
+}
+});
+
+/* ===== DONUT ===== */
+new Chart(document.getElementById("graficoDonut"),{
+type:'doughnut',
+data:{
+labels:Object.keys(mapPizza),
+datasets:[{data:Object.values(mapPizza)}]
+}
+});
 
 });
 
-/* ⚠️ Aqui você pode colar depois os outros scripts se quiser */
-
-};
+}
 
 </script>
 
