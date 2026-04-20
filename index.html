@@ -4,221 +4,157 @@
 <meta charset="UTF-8">
 <title>Dashboard Financeiro</title>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:Arial;background:#f4f7fb;}
 
-.header{
-background:#184a5a;color:white;padding:15px 25px;
-font-size:20px;font-weight:bold;
+/* ===== RESET ===== */
+* {
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
 }
 
-.tabs{display:flex;background:white;border-bottom:2px solid #ddd;}
-
-.tab-button{
-padding:14px 20px;cursor:pointer;border:none;
-background:none;font-weight:bold;color:#555;
+body {
+    font-family: Arial;
+    background:#f4f7fb;
 }
 
-.tab-button.active{
-color:#184a5a;border-bottom:3px solid #184a5a;
+/* ===== HEADER ===== */
+.header {
+    background:#184a5a;
+    color:white;
+    padding:15px 25px;
+    font-size:20px;
+    font-weight:bold;
 }
 
-.tab-content{display:none;padding:20px;}
-.tab-content.active{display:block;}
-
-/* ===== ABA 1 ===== */
-
-.topo{font-size:13px;font-weight:bold;}
-.titulo{text-align:center;font-size:22px;font-weight:bold;margin-top:20px;}
-
-.container-cards{
-display:flex;justify-content:center;gap:15px;margin-top:20px;
+/* ===== MENU ABAS ===== */
+.tabs {
+    display:flex;
+    background:white;
+    border-bottom:2px solid #ddd;
 }
 
-.card{
-width:150px;background:white;padding:10px;border-radius:10px;text-align:center;
+.tab-button {
+    padding:14px 20px;
+    cursor:pointer;
+    border:none;
+    background:none;
+    font-weight:bold;
+    color:#555;
+    transition:0.3s;
 }
 
-.grafico-container{
-width:100%;height:450px;margin-top:30px;
-background:#0f3b4c;padding:20px;border-radius:10px;
+.tab-button:hover {
+    background:#f1f1f1;
 }
 
-.donut-container{
-width:100%;margin-top:30px;background:#0f3b4c;
-padding:20px;border-radius:10px;display:flex;gap:30px;
+.tab-button.active {
+    color:#184a5a;
+    border-bottom:3px solid #184a5a;
 }
 
-.donut-chart{width:250px !important;height:250px !important;}
-
-table{
-border-collapse:collapse;width:100%;font-size:11px;color:white;
+/* ===== CONTEÚDO ===== */
+.tab-content {
+    display:none;
+    padding:20px;
 }
 
-th,td{padding:6px;border:1px solid rgba(255,255,255,0.3);}
-th{background:rgba(255,255,255,0.1);}
+.tab-content.active {
+    display:block;
+}
+
+/* ===== CONTAINER PADRÃO ===== */
+.aba-box {
+    background:white;
+    border-radius:10px;
+    padding:20px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* ===== PLACEHOLDER ===== */
+.placeholder {
+    text-align:center;
+    color:#888;
+    padding:40px;
+    border:2px dashed #ccc;
+    border-radius:10px;
+}
+
 </style>
 </head>
 
 <body>
 
-<div class="header">Dashboard Financeiro</div>
+<div class="header">
+Dashboard Financeiro e Operacional
+</div>
 
+<!-- ===== ABAS ===== -->
 <div class="tabs">
-<button class="tab-button active" onclick="openTab(event,'aba1')">Performance</button>
-<button class="tab-button" onclick="openTab(event,'aba2')">Outros</button>
+    <button class="tab-button active" onclick="openTab(event, 'aba1')">Performance e Indicadores</button>
+    <button class="tab-button" onclick="openTab(event, 'aba2')">Conciliação Bancária</button>
+    <button class="tab-button" onclick="openTab(event, 'aba3')">Fluxo de Caixa Projetado</button>
+    <button class="tab-button" onclick="openTab(event, 'aba4')">Fluxo Projetado vs Realizado</button>
 </div>
 
-<!-- ================= ABA 1 ================= -->
+<!-- ===== ABA 1 ===== -->
 <div id="aba1" class="tab-content active">
+    <div class="aba-box">
 
-<div class="topo">
-Data: <span id="dataAtualizacao">...</span>
+        <!-- 👉 COLE SEU DASHBOARD AQUI (SEM <body> e SEM <style>) -->
+        <div class="placeholder">
+            Cole aqui o código da aba <b>Performance e Indicadores</b>
+        </div>
+
+    </div>
 </div>
 
-<div class="titulo">Indicadores</div>
-
-<div class="container-cards">
-<div class="card"><h3>Cirurgias</h3><p id="totalCirurgias">...</p></div>
-<div class="card"><h3>Receita</h3><p id="receita">...</p></div>
-<div class="card"><h3>Custo</h3><p id="custo">...</p></div>
-<div class="card"><h3>Resultado</h3><p id="resultado">...</p></div>
+<!-- ===== ABA 2 ===== -->
+<div id="aba2" class="tab-content">
+    <div class="aba-box">
+        <div class="placeholder">
+            Cole aqui o código da aba <b>Conciliação Bancária</b>
+        </div>
+    </div>
 </div>
 
-<div class="grafico-container">
-<canvas id="graficoMensal"></canvas>
+<!-- ===== ABA 3 ===== -->
+<div id="aba3" class="tab-content">
+    <div class="aba-box">
+        <div class="placeholder">
+            Cole aqui o código da aba <b>Fluxo de Caixa Projetado</b>
+        </div>
+    </div>
 </div>
 
-<div class="donut-container">
-<div>
-<canvas id="graficoDonut" class="donut-chart"></canvas>
-<div id="legendaCustom"></div>
+<!-- ===== ABA 4 ===== -->
+<div id="aba4" class="tab-content">
+    <div class="aba-box">
+        <div class="placeholder">
+            Vamos construir essa juntos 🚀
+        </div>
+    </div>
 </div>
-
-<div>
-<h3 style="color:white;">Faturar</h3>
-<table id="tabela50"></table>
-</div>
-</div>
-
-</div>
-
-<div id="aba2" class="tab-content">Em construção</div>
 
 <script>
-function openTab(evt,tab){
-document.querySelectorAll(".tab-content").forEach(t=>t.classList.remove("active"));
-document.querySelectorAll(".tab-button").forEach(b=>b.classList.remove("active"));
-document.getElementById(tab).classList.add("active");
-evt.currentTarget.classList.add("active");
+
+function openTab(evt, tabName) {
+
+    let i, tabcontent, tabbuttons;
+
+    tabcontent = document.getElementsByClassName("tab-content");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].classList.remove("active");
+    }
+
+    tabbuttons = document.getElementsByClassName("tab-button");
+    for (i = 0; i < tabbuttons.length; i++) {
+        tabbuttons[i].classList.remove("active");
+    }
+
+    document.getElementById(tabName).classList.add("active");
+    evt.currentTarget.classList.add("active");
 }
-</script>
-
-<!-- ================= SCRIPT COMPLETO ================= -->
-<script>
-
-const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1391018010&output=csv";
-
-function parseCSV(t){
-const l=[];let r=[],v='',q=false;
-for(let c of t){
-if(c=='"')q=!q;
-else if(c==','&&!q){r.push(v);v=''}
-else if((c=='\n'||c=='\r')&&!q){
-if(v||r.length){r.push(v);l.push(r);r=[];v=''}
-}else v+=c;
-}
-if(v||r.length){r.push(v);l.push(r)}
-return l;
-}
-
-function br(v){
-return parseFloat(v?.replace(/\./g,'').replace(',','.'))||0;
-}
-
-function mesAno(d){
-if(!d||!d.includes("/"))return "";
-let p=d.split("/");
-return p[1]+"/"+p[2].slice(-2);
-}
-
-fetch(url)
-.then(r=>r.text())
-.then(data=>{
-
-const linhas=parseCSV(data);
-
-document.getElementById("dataAtualizacao").innerText = linhas[1][0];
-
-const vales = linhas.slice(1).map(l => l[2]).filter(v => v);
-document.getElementById("totalCirurgias").innerText = [...new Set(vales)].length;
-
-let map={},recT=0,cusT=0;
-let mapPizza={};
-
-linhas.slice(1).forEach(l=>{
-
-let vale=l[2];
-let situacao=l[4];
-let mes=mesAno(l[5]);
-let rec=br(l[27]);
-let cus=br(l[29]);
-
-recT+=rec;
-cusT+=cus;
-
-if(mes){
-if(!map[mes]) map[mes]={rec:0,cus:0};
-map[mes].rec+=rec;
-map[mes].cus+=cus;
-}
-
-if(!mapPizza[situacao]){
-mapPizza[situacao]={qtd:0,vales:{}};
-}
-
-if(!mapPizza[situacao].vales[vale]){
-mapPizza[situacao].qtd++;
-mapPizza[situacao].vales[vale]=true;
-}
-
-});
-
-const f=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-
-document.getElementById("receita").innerText=f(recT);
-document.getElementById("custo").innerText=f(cusT);
-document.getElementById("resultado").innerText=f(recT-cusT);
-
-/* GRAFICO */
-const meses=Object.keys(map);
-
-new Chart(document.getElementById("graficoMensal"),{
-type:'bar',
-data:{
-labels:meses,
-datasets:[
-{data:meses.map(m=>map[m].cus),backgroundColor:'#ff7b7b'},
-{data:meses.map(m=>map[m].rec),backgroundColor:'#4CAF50'}
-]
-}
-});
-
-/* DONUT */
-new Chart(document.getElementById("graficoDonut"),{
-type:'doughnut',
-data:{
-labels:Object.keys(mapPizza),
-datasets:[{
-data:Object.values(mapPizza).map(v=>v.qtd)
-}]
-}
-});
-
-});
 
 </script>
 
