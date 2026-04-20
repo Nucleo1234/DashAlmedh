@@ -78,6 +78,29 @@ body {
     font-size:14px;
 }
 
+
+/* ISOLAMENTO DA ABA 1 */
+.aba1 {
+    /*background: #cfe8ff;*/
+    padding: 20px;
+    border-radius: 10px;
+}
+
+/* REMOVE IMPACTO GLOBAL */
+body {
+    background:#f4f7fb !important;
+    padding:0 !important;
+}
+
+/* AJUSTA LARGURA DOS BLOCOS */
+.aba1 .grafico-container,
+.aba1 .donut-container {
+    width: 100%;
+}
+
+
+
+
 </style>
 </head>
 
@@ -111,7 +134,7 @@ body {
 
 <!-- ABA 1 -->
 <div id="aba1" class="tab-content active">
-    <div class="dashboard-container">
+    <div class="dashboard-container aba1">
 
         <!-- COLE SEU DASHBOARD DE PERFORMANCE AQUI -->
         
