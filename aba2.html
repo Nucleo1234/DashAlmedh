@@ -37,7 +37,6 @@ header {
     background:#fff;
     padding:15px;
     border-radius:10px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.08);
 }
 
 table {
@@ -57,15 +56,11 @@ th {
 }
 
 td { text-align:right; }
-
 th:first-child, td:first-child { text-align:left; }
-
-.desc { text-align:left !important; }
 
 .flex { display:flex; gap:20px; }
 
 .small-chart { height:250px !important; }
-
 </style>
 </head>
 
@@ -106,9 +101,7 @@ th:first-child, td:first-child { text-align:left; }
 
 <div class="section card">
 <h3>Resumo por Conta de Custo</h3>
-<div style="overflow:auto">
 <table id="custosTable"></table>
-</div>
 </div>
 
 </div>
@@ -147,13 +140,13 @@ function br(v){
     return parseFloat(v?.replace(/\./g,'').replace(',','.'))||0;
 }
 
-// ===== NORMALIZA =====
+// ===== NORMALIZAÇÃO CORRETA =====
 function normalize(linhas){
     return linhas.slice(1).map(l=>({
         data: parseDate(l[0]),
         credito: br(l[3]),
         debito: br(l[4]),
-        descricao: l[10] || "Sem descrição" // 🔥 COLUNA K
+        descricao: l[10] || "Sem descrição"
     })).filter(r=>r.data);
 }
 
@@ -184,8 +177,42 @@ function buildChart(){
     });
 }
 
-// ===== VISÃO MENSAL =====
+// ===== ANO =====
+function processYear(y){
+    let arr=Array(12).fill().map(()=>({e:0,s:0,saldo:0}));
+
+    rawData.forEach(r=>{
+        if(r.data.getFullYear()==y){
+            let m=r.data.getMonth();
+            arr[m].e+=r.credito;
+            arr[m].s+=r.debito;
+        }
+    });
+
+    arr.forEach(r=>r.saldo=r.e-r.s);
+    return arr;
+}
+
+function buildYear(y,id){
+    let d=processYear(y);
+
+    let html='<tr><th>Mês</th><th>Entrada</th><th>Saída</th><th>Saldo</th></tr>';
+
+    d.forEach((r,i)=>{
+        html+=`<tr>
+        <td>${meses[i]}</td>
+        <td>${r.e.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+        <td>${r.s.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+        <td><a onclick="loadMonth(${y},${i})">${r.saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</a></td>
+        </tr>`;
+    });
+
+    document.getElementById(id).innerHTML=html;
+}
+
+// ===== MÊS =====
 function loadMonth(y,m){
+
     let dados=rawData.filter(r=>r.data.getFullYear()==y&&r.data.getMonth()==m);
 
     let totalE=0,totalS=0;
@@ -214,7 +241,6 @@ function loadMonth(y,m){
         </tr>`;
     });
 
-    // 🔥 TOTAL
     html+=`<tr style="background:#eee;font-weight:bold">
     <td>Total</td>
     <td>${totalE.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
@@ -225,9 +251,8 @@ function loadMonth(y,m){
     document.getElementById('mensalTable').innerHTML=html;
 }
 
-// ===== CUSTOS DINÂMICO =====
+// ===== CUSTOS =====
 function buildCustos(){
-
     let mapa={};
     let mesesUsados=new Set();
 
@@ -240,7 +265,6 @@ function buildCustos(){
         mesesUsados.add(id);
 
         if(!mapa[key]) mapa[key]={};
-
         if(!mapa[key][id]) mapa[key][id]=0;
 
         mapa[key][id]+= (r.credito-r.debito);
@@ -262,7 +286,7 @@ function buildCustos(){
     Object.entries(mapa).forEach(([conta,obj])=>{
         let total=0;
 
-        rows+=`<tr><td class="desc">${conta}</td>`;
+        rows+=`<tr><td>${conta}</td>`;
 
         mesesOrdenados.forEach(m=>{
             let v=obj[m]||0;
@@ -286,6 +310,8 @@ fetch(url)
 
     calcularTotais();
     buildChart();
+    buildYear(2025,'table2025');
+    buildYear(2026,'table2026');
     buildCustos();
 });
 
