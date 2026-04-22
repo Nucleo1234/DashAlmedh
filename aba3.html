@@ -21,28 +21,45 @@ h1 { text-align:center;}
     padding:10px;
     border-radius:8px;
     cursor:pointer;
+    transition:0.2s;
+}
+
+.card:hover {
+    transform:scale(1.05);
+    box-shadow:0 5px 15px rgba(0,0,0,0.2);
+}
+
+.mes {
+    background:white;
+    padding:10px;
+    margin-top:10px;
+    border-radius:8px;
 }
 
 .box-valor {
     border:2px solid black;
-    padding:5px;
+    padding:5px 10px;
     margin-top:5px;
 }
 
 .negativo { color:red; font-weight:bold;}
 
-.mes { background:white; padding:10px; margin-top:10px; border-radius:8px;}
-
 table { width:100%; border-collapse:collapse;}
 td,th { border:1px solid #ddd; padding:5px; text-align:center;}
 
-.detalhe { margin-top:20px; background:white; padding:15px; border-radius:8px;}
+.detalhe {
+    margin-top:20px;
+    background:white;
+    padding:15px;
+    border-radius:8px;
+}
 </style>
 </head>
 
 <body>
 
 <div class="container">
+
 <h1>Fluxo de Caixa Projetado</h1>
 
 Ano:
@@ -51,6 +68,7 @@ Ano:
 <div id="resumoTrimestres" class="resumo"></div>
 <div id="meses"></div>
 <div id="detalheDia" class="detalhe"></div>
+
 </div>
 
 <script>
@@ -63,21 +81,27 @@ let dataSaldoInicial=null;
 let saldoPorData={};
 let anoSelecionado=null;
 
-// ===== NORMALIZA TEXTO =====
-function normalizar(t){
- return t.toLowerCase()
-  .normalize("NFD")
-  .replace(/[\u0300-\u036f]/g,"")
-  .trim();
+// ===== CSV =====
+function parseCSV(t){
+ let l=[],r=[],v='',q=false;
+ for(let c of t){
+  if(c=='"')q=!q;
+  else if(c==','&&!q){r.push(v);v=''}
+  else if((c=='\n'||c=='\r')&&!q){
+   if(v||r.length){r.push(v);l.push(r);r=[];v=''}
+  } else v+=c;
+ }
+ if(v||r.length){r.push(v);l.push(r)}
+ return l;
 }
 
-// ===== HELPERS =====
+// ===== FORMATOS =====
 function br(v){
  return Number((v||'0').replace(/\./g,'').replace(',','.'));
 }
 
 function formatar(v){
- return v.toLocaleString("pt-BR",{minimumFractionDigits:2});
+ return v.toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
 function converterData(v){
@@ -87,49 +111,30 @@ function converterData(v){
 }
 
 // ===== IMPORTAÇÃO =====
-fetch(url)
-.then(r=>r.text())
-.then(csv=>{
+fetch(url).then(r=>r.text()).then(txt=>{
 
- let linhas = csv.split('\n').map(l=>l.split(','));
-
- let header = linhas[0].map(h=>normalizar(h));
-
- // 🔥 IDENTIFICA COLUNAS COM SEGURANÇA
- let idxData = header.findIndex(h=>h.includes('data') && !h.includes('saldo'));
- let idxValor = header.findIndex(h=>h.includes('valor'));
- let idxRef = header.findIndex(h=>h.includes('refer'));
- let idxDesc = header.findIndex(h=>h.includes('descricao'));
- let idxSaldo = header.findIndex(h=>h.includes('saldo inicial'));
- let idxDataSaldo = header.findIndex(h=>h.includes('data do saldo'));
-
- // 🔥 FALLBACK (caso algo dê errado)
- if(idxData === -1) idxData = 3;
- if(idxValor === -1) idxValor = 2;
- if(idxRef === -1) idxRef = 4;
- if(idxDesc === -1) idxDesc = 1;
- if(idxSaldo === -1) idxSaldo = 6;
- if(idxDataSaldo === -1) idxDataSaldo = 7;
+ let linhas=parseCSV(txt);
 
  dados = linhas.slice(1).map(l=>{
 
-  let ref=(l[idxRef]||'').toUpperCase();
+  let referencia = (l[4]||'').toUpperCase();
 
   let tipo=null;
-  if(ref.includes('RECEBER')) tipo='entrada';
-  if(ref.includes('PAGAR')) tipo='saida';
+  if(referencia.includes('RECEBER')) tipo='entrada';
+  if(referencia.includes('PAGAR')) tipo='saida';
 
   return {
-    data: converterData(l[idxData]),
-    valor: br(l[idxValor]),
-    descricao: l[idxDesc]||'',
+    data: converterData(l[3]), // COLUNA D
+    valor: br(l[2]),           // COLUNA C
+    descricao: l[1] || '',
     tipo
   };
 
  }).filter(d=>d.data && d.tipo);
 
- saldoInicial = br(linhas[1][idxSaldo]);
- dataSaldoInicial = converterData(linhas[1][idxDataSaldo]);
+ // 🔥 AGORA CORRETO
+ saldoInicial = br(linhas[1][6]);      // COLUNA G
+ dataSaldoInicial = converterData(linhas[1][7]); // COLUNA H
 
  carregarAnos();
 });
@@ -144,77 +149,14 @@ function carregarAnos(){
 
 // ===== ATUALIZA =====
 function atualizarAno(){
+ anoSelecionado=Number(document.getElementById('anoSelect').value);
 
- anoSelecionado = parseInt(document.getElementById('anoSelect').value);
- if(!anoSelecionado) return;
+ dadosFiltrados=dados.filter(d=>d.data.getFullYear()==anoSelecionado);
 
- dadosFiltrados = dados.filter(d => d.data.getFullYear() === anoSelecionado);
-
- calcularSaldosAno();
  gerarResumoTrimestres();
 
  document.getElementById('meses').innerHTML='';
  document.getElementById('detalheDia').innerHTML='';
-}
-
-// ===== SALDOS =====
-function calcularSaldosAno(){
-
- saldoPorData={};
-
- let mapa={};
-
- dadosFiltrados.forEach(d=>{
-  let k=d.data.toISOString().slice(0,10);
-
-  if(!mapa[k]) mapa[k]={entrada:0,saida:0};
-
-  if(d.tipo==='entrada') mapa[k].entrada+=d.valor;
-  else mapa[k].saida+=d.valor;
- });
-
- let inicioStr = dataSaldoInicial.toISOString().slice(0,10);
-
- if(!mapa[inicioStr]){
-   mapa[inicioStr]={entrada:0,saida:0};
- }
-
- let datas = Object.keys(mapa).sort();
-
- let saldoAtual = saldoInicial;
-
- datas.forEach(k=>{
-
-   if(k === inicioStr){
-
-     saldoPorData[k]={
-       saldoInicial: saldoInicial,
-       entrada: mapa[k].entrada,
-       saida: mapa[k].saida,
-       saldoFinal: saldoInicial + mapa[k].entrada - mapa[k].saida
-     };
-
-     saldoAtual = saldoPorData[k].saldoFinal;
-   }
-
-   else if(k > inicioStr){
-
-     let entrada = mapa[k].entrada;
-     let saida = mapa[k].saida;
-
-     let final = saldoAtual + entrada - saida;
-
-     saldoPorData[k]={
-       saldoInicial: saldoAtual,
-       entrada,
-       saida,
-       saldoFinal: final
-     };
-
-     saldoAtual = final;
-   }
-
- });
 }
 
 // ===== TRIMESTRES =====
@@ -250,12 +192,60 @@ function gerarResumoTrimestres(){
  }
 }
 
-// ===== TRIMESTRE =====
+// ===== MOTOR CORRETO =====
+function calcularFluxo(){
+
+ let mapa={};
+
+ dadosFiltrados.forEach(d=>{
+  let k=d.data.toISOString().slice(0,10);
+
+  if(!mapa[k]) mapa[k]={entrada:0,saida:0};
+
+  if(d.tipo==='entrada') mapa[k].entrada+=d.valor;
+  else mapa[k].saida+=d.valor;
+ });
+
+ // 🔥 FORÇA DATA INICIAL
+ let keyInicial = dataSaldoInicial.toISOString().slice(0,10);
+
+ if(!mapa[keyInicial]) mapa[keyInicial]={entrada:0,saida:0};
+
+ let datas=Object.keys(mapa).sort();
+
+ let saldoAtual = saldoInicial;
+ saldoPorData={};
+
+ datas.forEach(k=>{
+
+   if(k < keyInicial) return; // ignora antes da data
+
+   let entrada = mapa[k].entrada || 0;
+   let saida = mapa[k].saida || 0;
+
+   let final = saldoAtual + entrada - saida;
+
+   saldoPorData[k] = {
+     saldoInicial: saldoAtual,
+     entrada,
+     saida,
+     saldoFinal: final
+   };
+
+   saldoAtual = final;
+ });
+}
+
+// ===== CLIQUE TRIMESTRE =====
 function selecionarTrimestre(t){
 
+ document.getElementById('detalheDia').innerHTML='';
  let container=document.getElementById('meses');
  container.innerHTML='';
- document.getElementById('detalheDia').innerHTML='';
+
+ if(anoSelecionado < dataSaldoInicial.getFullYear()) return;
+
+ calcularFluxo();
 
  tri[t].forEach(m=>{
 
@@ -263,13 +253,13 @@ function selecionarTrimestre(t){
 
   Object.keys(saldoPorData).forEach(k=>{
     let d=new Date(k);
+
     if(d.getMonth()===m){
       dias[d.getDate()]=saldoPorData[k];
     }
   });
 
   let diasOrd=Object.keys(dias).map(Number).sort((a,b)=>a-b);
-
   if(diasOrd.length===0) return;
 
   let tabela='<table><tr><th>Dia</th>';
