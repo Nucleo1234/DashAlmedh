@@ -63,6 +63,14 @@ let dataSaldoInicial=null;
 let saldoPorData={};
 let anoSelecionado=null;
 
+// ===== NORMALIZA TEXTO =====
+function normalizar(t){
+ return t.toLowerCase()
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g,"")
+  .trim();
+}
+
 // ===== HELPERS =====
 function br(v){
  return Number((v||'0').replace(/\./g,'').replace(',','.'));
@@ -85,14 +93,23 @@ fetch(url)
 
  let linhas = csv.split('\n').map(l=>l.split(','));
 
- let header = linhas[0].map(h=>h.toLowerCase().trim());
+ let header = linhas[0].map(h=>normalizar(h));
 
- let idxData = header.findIndex(h=>h.includes('data'));
+ // 🔥 IDENTIFICA COLUNAS COM SEGURANÇA
+ let idxData = header.findIndex(h=>h.includes('data') && !h.includes('saldo'));
  let idxValor = header.findIndex(h=>h.includes('valor'));
  let idxRef = header.findIndex(h=>h.includes('refer'));
- let idxDesc = header.findIndex(h=>h.includes('descr'));
+ let idxDesc = header.findIndex(h=>h.includes('descricao'));
  let idxSaldo = header.findIndex(h=>h.includes('saldo inicial'));
  let idxDataSaldo = header.findIndex(h=>h.includes('data do saldo'));
+
+ // 🔥 FALLBACK (caso algo dê errado)
+ if(idxData === -1) idxData = 3;
+ if(idxValor === -1) idxValor = 2;
+ if(idxRef === -1) idxRef = 4;
+ if(idxDesc === -1) idxDesc = 1;
+ if(idxSaldo === -1) idxSaldo = 6;
+ if(idxDataSaldo === -1) idxDataSaldo = 7;
 
  dados = linhas.slice(1).map(l=>{
 
