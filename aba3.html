@@ -1,1 +1,329 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Fluxo de Caixa Projetado</title>
 
+<style>
+body { font-family: Arial; background:#f5f6fa; margin:20px;}
+.container { max-width:1200px; margin:auto;}
+h1 { text-align:center;}
+
+.resumo {
+    display:grid;
+    grid-template-columns: repeat(4,1fr);
+    gap:10px;
+    margin-bottom:20px;
+}
+
+.card {
+    background:white;
+    padding:10px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.card:hover {
+    transform:scale(1.05);
+    box-shadow:0 5px 15px rgba(0,0,0,0.2);
+}
+
+.mes {
+    background:white;
+    padding:10px;
+    margin-top:10px;
+    border-radius:8px;
+}
+
+.box-valor {
+    border:2px solid black;
+    padding:5px 10px;
+}
+
+table { width:100%; border-collapse:collapse;}
+td,th { border:1px solid #ddd; padding:5px; text-align:center;}
+
+.negativo { color:red; font-weight:bold;}
+
+.dia-link {
+    cursor:pointer;
+    color:black;
+}
+
+.detalhe {
+    margin-top:20px;
+    background:white;
+    padding:15px;
+    border-radius:8px;
+}
+
+.flex { display:flex; gap:20px;}
+.box { width:50%; }
+.total-box { margin-top:5px; font-weight:bold; }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Fluxo de Caixa Projetado</h1>
+
+Ano:
+<select id="anoSelect" onchange="atualizarAno()"></select>
+
+<div id="resumoTrimestres" class="resumo"></div>
+<div id="meses"></div>
+<div id="detalheDia" class="detalhe"></div>
+
+</div>
+
+<script>
+
+const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=1992496280&single=true&output=csv";
+
+let dados=[],dadosFiltrados=[];
+let anoSelecionado=null;
+
+let saldoInicial=0;
+let dataSaldoInicial=null;
+
+let saldoPorData={};
+
+// ===== CSV =====
+function parseCSV(t){
+    const l=[];let r=[],v='',q=false;
+    for(let c of t){
+        if(c=='"')q=!q;
+        else if(c==','&&!q){r.push(v);v=''}
+        else if((c=='\n'||c=='\r')&&!q){
+            if(v||r.length){r.push(v);l.push(r);r=[];v=''}
+        } else v+=c;
+    }
+    if(v||r.length){r.push(v);l.push(r)}
+    return l;
+}
+
+function br(v){
+    return Number((v||'0').replace(/\./g,'').replace(',','.'));
+}
+
+function parseData(v){
+    if(!v) return null;
+    let p=v.split('/');
+    return new Date(p[2],p[1]-1,p[0]);
+}
+
+// ===== IMPORTAÇÃO DIRETA =====
+fetch(url).then(r=>r.text()).then(data=>{
+
+    const linhas = parseCSV(data);
+
+    dados = linhas.slice(1).map(l=>({
+        data: parseData(l[0]),      // ajuste se necessário
+        valor: br(l[1]),            // ajuste se necessário
+        descricao: l[10],           // coluna K
+        tipo: (l[3]||'').toLowerCase().includes('entrada') ? 'entrada':'saida'
+    })).filter(d=>d.data);
+
+    // 🔥 SALDO AUTOMÁTICO
+    saldoInicial = br(linhas[1][6]);     // Coluna G
+    dataSaldoInicial = parseData(linhas[1][7]); // Coluna H
+
+    carregarAnos();
+});
+
+// ===== ANOS =====
+function carregarAnos(){
+    let anos=[...new Set(dados.map(d=>d.data.getFullYear()))].sort((a,b)=>b-a);
+    let s=document.getElementById('anoSelect');
+    s.innerHTML='<option>Selecione</option>';
+    anos.forEach(a=> s.innerHTML+=`<option>${a}</option>`);
+}
+
+// ===== ATUALIZA =====
+function atualizarAno(){
+    anoSelecionado=document.getElementById('anoSelect').value;
+    dadosFiltrados=dados.filter(d=>d.data.getFullYear()==anoSelecionado);
+
+    calcularSaldosAno();
+    gerarResumoTrimestres();
+
+    document.getElementById('meses').innerHTML='';
+    document.getElementById('detalheDia').innerHTML='';
+}
+
+// ===== MOTOR =====
+function calcularSaldosAno(){
+
+    saldoPorData = {};
+    let mapa = {};
+
+    dadosFiltrados.forEach(d=>{
+        let key = d.data.toISOString().slice(0,10);
+
+        if(!mapa[key]) mapa[key]={entrada:0,saida:0};
+
+        d.tipo==='entrada' ? mapa[key].entrada+=d.valor : mapa[key].saida+=d.valor;
+    });
+
+    let datas = Object.keys(mapa).sort();
+    let saldoAtual = null;
+
+    datas.forEach(k=>{
+        let d = new Date(k);
+
+        if(mesmaData(d,dataSaldoInicial)){
+            saldoAtual = saldoInicial;
+        }
+
+        if(saldoAtual!==null){
+
+            let entrada = mapa[k].entrada;
+            let saida = mapa[k].saida;
+
+            let final = saldoAtual + entrada - saida;
+
+            saldoPorData[k] = {
+                saldoInicial: saldoAtual,
+                entrada,
+                saida,
+                saldoFinal: final
+            };
+
+            saldoAtual = final;
+        }
+    });
+}
+
+// ===== RESUMO =====
+const mesesTri={1:[0,1,2],2:[3,4,5],3:[6,7,8],4:[9,10,11]};
+
+function gerarResumoTrimestres(){
+
+    let c=document.getElementById('resumoTrimestres');
+    c.innerHTML='';
+
+    for(let t=1;t<=4;t++){
+        let e=0,s=0;
+
+        dadosFiltrados.forEach(d=>{
+            if(mesesTri[t].includes(d.data.getMonth())){
+                d.tipo==='entrada'?e+=d.valor:s+=d.valor;
+            }
+        });
+
+        let saldo=e-s;
+
+        c.innerHTML+=`
+        <div class="card" onclick="selecionarTrimestre(${t})">
+            <h4>${t}º Trimestre</h4>
+            <div class="box-valor">Entrada: ${e.toFixed(2)}</div>
+            <div class="box-valor">Saída: -${s.toFixed(2)}</div>
+            <div class="box-valor ${saldo<0?'negativo':''}">
+                Saldo: ${saldo.toFixed(2)}
+            </div>
+        </div>`;
+    }
+}
+
+// ===== TRIMESTRE =====
+function selecionarTrimestre(t){
+
+    let container=document.getElementById('meses');
+    container.innerHTML='';
+
+    mesesTri[t].forEach(m=>{
+
+        let dias={};
+
+        Object.keys(saldoPorData).forEach(k=>{
+            let d=new Date(k);
+            if(d.getMonth()===m){
+                dias[d.getDate()]=saldoPorData[k];
+            }
+        });
+
+        let diasOrd=Object.keys(dias).map(Number).sort((a,b)=>a-b);
+        if(diasOrd.length===0) return;
+
+        let tabela='<table><tr><td>Dia</td>';
+        diasOrd.forEach(d=>{
+            tabela+=`<td class="dia-link" onclick="mostrarDetalhe(${m},${d})">${d}</td>`;
+        });
+        tabela+='</tr>';
+
+        let si='<tr><td>Saldo Inicial</td>';
+        let en='<tr><td>Entradas</td>';
+        let sa='<tr><td>Saídas</td>';
+        let sf='<tr><td>Saldo Final</td>';
+
+        diasOrd.forEach(d=>{
+            let obj=dias[d];
+            si+=`<td>${obj.saldoInicial.toFixed(2)}</td>`;
+            en+=`<td>${obj.entrada.toFixed(2)}</td>`;
+            sa+=`<td>-${obj.saida.toFixed(2)}</td>`;
+            sf+=`<td class="${obj.saldoFinal<0?'negativo':''}">
+                    ${obj.saldoFinal.toFixed(2)}
+                 </td>`;
+        });
+
+        tabela+=si+'</tr>'+en+'</tr>'+sa+'</tr>'+sf+'</tr></table>';
+
+        let nomeMes=new Date(anoSelecionado,m)
+            .toLocaleString('pt-BR',{month:'long'});
+
+        container.innerHTML+=`
+        <div class="mes">
+            <h3>${nomeMes}</h3>
+            ${tabela}
+        </div>`;
+    });
+}
+
+// ===== DETALHE =====
+function mostrarDetalhe(mes,dia){
+
+    let entradas=[],saidas=[],totE=0,totS=0;
+
+    dadosFiltrados.forEach(d=>{
+        if(d.data.getMonth()===mes && d.data.getDate()==dia){
+            if(d.tipo==='entrada'){ entradas.push(d); totE+=d.valor;}
+            else{ saidas.push(d); totS+=d.valor;}
+        }
+    });
+
+    let saldo=totE-totS;
+    let nomeMes=new Date(anoSelecionado,mes).toLocaleString('pt-BR',{month:'long'});
+
+    document.getElementById('detalheDia').innerHTML=`
+    <h3>Detalhes do dia</h3>
+
+    <div class="flex">
+        <div class="box">
+            <h4>Entrada</h4>
+            ${entradas.map(e=>`<div>${e.descricao} - ${e.valor.toFixed(2)}</div>`).join('')}
+            <div class="total-box">Total: ${totE.toFixed(2)}</div>
+        </div>
+
+        <div class="box">
+            <h4>Saída</h4>
+            ${saidas.map(s=>`<div>${s.descricao} - ${s.valor.toFixed(2)}</div>`).join('')}
+            <div class="total-box">Total: -${totS.toFixed(2)}</div>
+        </div>
+    </div>
+
+    <h3 class="${saldo<0?'negativo':''}">
+        Saldo: ${saldo.toFixed(2)}
+    </h3>`;
+}
+
+function mesmaData(a,b){
+    return a&&b&&a.getFullYear()==b.getFullYear()&&a.getMonth()==b.getMonth()&&a.getDate()==b.getDate();
+}
+
+</script>
+
+</body>
+</html>
