@@ -81,7 +81,7 @@ let dataSaldoInicial=null;
 let saldoPorData={};
 let anoSelecionado=null;
 
-// ===== FUNÇÃO SEM TIMEZONE (🔥 CORREÇÃO)
+// ===== FORMATADOR DATA (SEM BUG)
 function formatarDataKey(date){
  let y = date.getFullYear();
  let m = String(date.getMonth()+1).padStart(2,'0');
@@ -182,19 +182,35 @@ function calcularFluxo(){
 
  let keyInicial = formatarDataKey(dataSaldoInicial);
 
- if(!mapa[keyInicial]) mapa[keyInicial]={entrada:0,saida:0};
+ // 🔥 REMOVE DATAS ANTERIORES
+ let datasValidas = Object.keys(mapa)
+   .filter(k => k >= keyInicial)
+   .sort();
 
- let datas = Object.keys(mapa).sort();
+ // 🔥 GARANTE PRIMEIRO DIA
+ if(!mapa[keyInicial]){
+   mapa[keyInicial] = {entrada:0, saida:0};
+   datasValidas.unshift(keyInicial);
+ }
 
  let saldoAtual = saldoInicial;
  saldoPorData = {};
 
- datas.forEach(k=>{
+ datasValidas.forEach((k, index)=>{
 
-   if(k < keyInicial) return;
+   // 🔥 PRIMEIRO DIA FIXO
+   if(index === 0){
+     saldoPorData[k] = {
+       saldoInicial: saldoInicial,
+       entrada: 0,
+       saida: 0,
+       saldoFinal: saldoInicial
+     };
+     return;
+   }
 
-   let entrada = mapa[k].entrada || 0;
-   let saida = mapa[k].saida || 0;
+   let entrada = mapa[k]?.entrada || 0;
+   let saida = mapa[k]?.saida || 0;
 
    let final = saldoAtual + entrada - saida;
 
@@ -242,7 +258,7 @@ function gerarCards(){
  }
 }
 
-// ===== CLIQUE TRIMESTRE
+// ===== TRIMESTRE
 function abrirTrimestre(t){
 
  document.getElementById('meses').innerHTML='';
@@ -265,17 +281,6 @@ function abrirTrimestre(t){
       dias[d.getDate()]=saldoPorData[k];
     }
   });
-
-  // 🔥 FORÇA O DIA INICIAL
-  if(anoSelecionado===anoBase && m===mesBase){
-    let d = dataSaldoInicial.getDate();
-    dias[d] = {
-      saldoInicial: saldoInicial,
-      entrada:0,
-      saida:0,
-      saldoFinal:saldoInicial
-    };
-  }
 
   let diasOrd=Object.keys(dias).map(Number).sort((a,b)=>a-b);
 
