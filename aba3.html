@@ -94,8 +94,16 @@ function parseCSV(t){
     return l;
 }
 
+// 💰 CONVERSÃO CORRETA
 function br(v){
-    return Number((v||'0').replace(/\./g,'').replace(',','.'));
+    if(!v) return 0;
+    return parseFloat(
+        v.toString()
+         .replace('R$','')
+         .replace(/\./g,'')
+         .replace(',','.')
+         .trim()
+    ) || 0;
 }
 
 function parseData(v){
@@ -109,12 +117,18 @@ fetch(url).then(r=>r.text()).then(data=>{
 
     const linhas = parseCSV(data);
 
-    dados = linhas.slice(1).map(l=>({
-        data: parseData(l[3]),       // ✅ COLUNA D (CORRIGIDO)
-        valor: br(l[4]),             // ajuste se necessário
-        descricao: l[10],            // coluna K
-        tipo: br(l[4]) >= 0 ? 'entrada' : 'saida'
-    })).filter(d=>d.data instanceof Date && !isNaN(d.data));
+    dados = linhas.slice(1).map(l=>{
+
+        let valor = br(l[2]); // ✅ COLUNA C
+
+        return {
+            data: parseData(l[3]),     // Coluna D
+            valor: valor,
+            descricao: l[10],          // Coluna K
+            tipo: valor >= 0 ? 'entrada' : 'saida'
+        }
+
+    }).filter(d=>d.data instanceof Date && !isNaN(d.data));
 
     // SALDO
     saldoInicial = br(linhas[1][6]);     
@@ -158,7 +172,8 @@ function calcularSaldosAno(){
 
         if(!mapa[key]) mapa[key]={entrada:0,saida:0};
 
-        d.tipo==='entrada' ? mapa[key].entrada+=d.valor : mapa[key].saida+=Math.abs(d.valor);
+        if(d.tipo==='entrada') mapa[key].entrada+=d.valor;
+        else mapa[key].saida+=Math.abs(d.valor);
     });
 
     let datas = Object.keys(mapa).sort();
