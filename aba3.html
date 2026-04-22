@@ -64,19 +64,6 @@ let saldoPorData={};
 let anoSelecionado=null;
 
 // ===== HELPERS =====
-function parseCSV(t){
- let l=[],r=[],v='',q=false;
- for(let c of t){
-  if(c=='"')q=!q;
-  else if(c==','&&!q){r.push(v);v=''}
-  else if((c=='\n'||c=='\r')&&!q){
-   if(v||r.length){r.push(v);l.push(r);r=[];v=''}
-  } else v+=c;
- }
- if(v||r.length){r.push(v);l.push(r)}
- return l;
-}
-
 function br(v){
  return Number((v||'0').replace(/\./g,'').replace(',','.'));
 }
@@ -91,34 +78,41 @@ function converterData(v){
  return new Date(p[2],p[1]-1,p[0]);
 }
 
-function keyData(d){
- return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+String(d.getDate()).padStart(2,'0');
-}
-
 // ===== IMPORTAÇÃO =====
-fetch(url).then(r=>r.text()).then(txt=>{
+fetch(url)
+.then(r=>r.text())
+.then(csv=>{
 
- let linhas=parseCSV(txt);
+ let linhas = csv.split('\n').map(l=>l.split(','));
+
+ let header = linhas[0].map(h=>h.toLowerCase().trim());
+
+ let idxData = header.findIndex(h=>h.includes('data'));
+ let idxValor = header.findIndex(h=>h.includes('valor'));
+ let idxRef = header.findIndex(h=>h.includes('refer'));
+ let idxDesc = header.findIndex(h=>h.includes('descr'));
+ let idxSaldo = header.findIndex(h=>h.includes('saldo inicial'));
+ let idxDataSaldo = header.findIndex(h=>h.includes('data do saldo'));
 
  dados = linhas.slice(1).map(l=>{
 
-  let ref=(l[4]||'').toUpperCase();
+  let ref=(l[idxRef]||'').toUpperCase();
 
   let tipo=null;
   if(ref.includes('RECEBER')) tipo='entrada';
   if(ref.includes('PAGAR')) tipo='saida';
 
   return {
-    data: converterData(l[3]),
-    valor: br(l[2]),
-    descricao: l[10]||'',
+    data: converterData(l[idxData]),
+    valor: br(l[idxValor]),
+    descricao: l[idxDesc]||'',
     tipo
   };
 
  }).filter(d=>d.data && d.tipo);
 
- saldoInicial = br(linhas[1][6]);
- dataSaldoInicial = converterData(linhas[1][7]);
+ saldoInicial = br(linhas[1][idxSaldo]);
+ dataSaldoInicial = converterData(linhas[1][idxDataSaldo]);
 
  carregarAnos();
 });
@@ -146,7 +140,7 @@ function atualizarAno(){
  document.getElementById('detalheDia').innerHTML='';
 }
 
-// ===== MOTOR CORRIGIDO =====
+// ===== SALDOS =====
 function calcularSaldosAno(){
 
  saldoPorData={};
@@ -154,7 +148,7 @@ function calcularSaldosAno(){
  let mapa={};
 
  dadosFiltrados.forEach(d=>{
-  let k=keyData(d);
+  let k=d.data.toISOString().slice(0,10);
 
   if(!mapa[k]) mapa[k]={entrada:0,saida:0};
 
@@ -162,7 +156,7 @@ function calcularSaldosAno(){
   else mapa[k].saida+=d.valor;
  });
 
- let inicioStr = keyData(dataSaldoInicial);
+ let inicioStr = dataSaldoInicial.toISOString().slice(0,10);
 
  if(!mapa[inicioStr]){
    mapa[inicioStr]={entrada:0,saida:0};
@@ -246,16 +240,12 @@ function selecionarTrimestre(t){
  container.innerHTML='';
  document.getElementById('detalheDia').innerHTML='';
 
- if(anoSelecionado < dataSaldoInicial.getFullYear()) return;
- if(anoSelecionado === dataSaldoInicial.getFullYear() && t === 1) return;
-
  tri[t].forEach(m=>{
 
   let dias={};
 
   Object.keys(saldoPorData).forEach(k=>{
     let d=new Date(k);
-
     if(d.getMonth()===m){
       dias[d.getDate()]=saldoPorData[k];
     }
