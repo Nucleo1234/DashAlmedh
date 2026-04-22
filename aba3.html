@@ -21,12 +21,6 @@ h1 { text-align:center;}
     padding:10px;
     border-radius:8px;
     cursor:pointer;
-    transition:0.2s;
-}
-
-.card:hover {
-    transform:scale(1.05);
-    box-shadow:0 5px 15px rgba(0,0,0,0.2);
 }
 
 .mes {
@@ -45,11 +39,7 @@ table { width:100%; border-collapse:collapse;}
 td,th { border:1px solid #ddd; padding:5px; text-align:center;}
 
 .negativo { color:red; font-weight:bold;}
-
-.dia-link {
-    cursor:pointer;
-    color:black;
-}
+.dia-link { cursor:pointer; }
 
 .detalhe {
     margin-top:20px;
@@ -60,7 +50,6 @@ td,th { border:1px solid #ddd; padding:5px; text-align:center;}
 
 .flex { display:flex; gap:20px;}
 .box { width:50%; }
-.total-box { margin-top:5px; font-weight:bold; }
 </style>
 </head>
 
@@ -110,35 +99,39 @@ function br(v){
 }
 
 function parseData(v){
-    if(!v) return null;
+    if(!v || !v.includes('/')) return null;
     let p=v.split('/');
     return new Date(p[2],p[1]-1,p[0]);
 }
 
-// ===== IMPORTAÇÃO DIRETA =====
+// ===== IMPORTAÇÃO =====
 fetch(url).then(r=>r.text()).then(data=>{
 
     const linhas = parseCSV(data);
 
     dados = linhas.slice(1).map(l=>({
-        data: parseData(l[0]),      // ajuste se necessário
-        valor: br(l[1]),            // ajuste se necessário
-        descricao: l[10],           // coluna K
-        tipo: (l[3]||'').toLowerCase().includes('entrada') ? 'entrada':'saida'
-    })).filter(d=>d.data);
+        data: parseData(l[3]),       // ✅ COLUNA D (CORRIGIDO)
+        valor: br(l[4]),             // ajuste se necessário
+        descricao: l[10],            // coluna K
+        tipo: br(l[4]) >= 0 ? 'entrada' : 'saida'
+    })).filter(d=>d.data instanceof Date && !isNaN(d.data));
 
-    // 🔥 SALDO AUTOMÁTICO
-    saldoInicial = br(linhas[1][6]);     // Coluna G
-    dataSaldoInicial = parseData(linhas[1][7]); // Coluna H
+    // SALDO
+    saldoInicial = br(linhas[1][6]);     
+    dataSaldoInicial = parseData(linhas[1][7]); 
 
     carregarAnos();
 });
 
 // ===== ANOS =====
 function carregarAnos(){
-    let anos=[...new Set(dados.map(d=>d.data.getFullYear()))].sort((a,b)=>b-a);
+    let anos=[...new Set(dados.map(d=>d.data.getFullYear()))]
+        .filter(a=>!isNaN(a))
+        .sort((a,b)=>a-b);
+
     let s=document.getElementById('anoSelect');
     s.innerHTML='<option>Selecione</option>';
+
     anos.forEach(a=> s.innerHTML+=`<option>${a}</option>`);
 }
 
@@ -165,7 +158,7 @@ function calcularSaldosAno(){
 
         if(!mapa[key]) mapa[key]={entrada:0,saida:0};
 
-        d.tipo==='entrada' ? mapa[key].entrada+=d.valor : mapa[key].saida+=d.valor;
+        d.tipo==='entrada' ? mapa[key].entrada+=d.valor : mapa[key].saida+=Math.abs(d.valor);
     });
 
     let datas = Object.keys(mapa).sort();
@@ -210,7 +203,7 @@ function gerarResumoTrimestres(){
 
         dadosFiltrados.forEach(d=>{
             if(mesesTri[t].includes(d.data.getMonth())){
-                d.tipo==='entrada'?e+=d.valor:s+=d.valor;
+                d.tipo==='entrada'?e+=d.valor:s+=Math.abs(d.valor);
             }
         });
 
@@ -290,12 +283,11 @@ function mostrarDetalhe(mes,dia){
     dadosFiltrados.forEach(d=>{
         if(d.data.getMonth()===mes && d.data.getDate()==dia){
             if(d.tipo==='entrada'){ entradas.push(d); totE+=d.valor;}
-            else{ saidas.push(d); totS+=d.valor;}
+            else{ saidas.push(d); totS+=Math.abs(d.valor);}
         }
     });
 
     let saldo=totE-totS;
-    let nomeMes=new Date(anoSelecionado,mes).toLocaleString('pt-BR',{month:'long'});
 
     document.getElementById('detalheDia').innerHTML=`
     <h3>Detalhes do dia</h3>
@@ -304,13 +296,13 @@ function mostrarDetalhe(mes,dia){
         <div class="box">
             <h4>Entrada</h4>
             ${entradas.map(e=>`<div>${e.descricao} - ${e.valor.toFixed(2)}</div>`).join('')}
-            <div class="total-box">Total: ${totE.toFixed(2)}</div>
+            <b>Total: ${totE.toFixed(2)}</b>
         </div>
 
         <div class="box">
             <h4>Saída</h4>
             ${saidas.map(s=>`<div>${s.descricao} - ${s.valor.toFixed(2)}</div>`).join('')}
-            <div class="total-box">Total: -${totS.toFixed(2)}</div>
+            <b>Total: -${totS.toFixed(2)}</b>
         </div>
     </div>
 
