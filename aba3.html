@@ -145,60 +145,62 @@ function atualizarAno(){
  document.getElementById('detalheDia').innerHTML='';
 }
 
-// ===== MOTOR CORRIGIDO (🔥 AQUI ESTÁ A CORREÇÃO REAL) =====
+// ===== MOTOR CORRIGIDO =====
 function calcularSaldosAno(){
 
  saldoPorData={};
 
  let mapa={};
 
- // agrupa movimentos
  dadosFiltrados.forEach(d=>{
-  let k=keyData(d.data);
+  let k=keyData(d);
+
   if(!mapa[k]) mapa[k]={entrada:0,saida:0};
 
   if(d.tipo==='entrada') mapa[k].entrada+=d.valor;
   else mapa[k].saida+=d.valor;
  });
 
- // 🔥 FORÇA DATA INICIAL
- let inicio = new Date(dataSaldoInicial);
- let kInicio = keyData(inicio);
+ // 🔥 DATA INICIAL EM STRING (SEM FUSO)
+ let inicioStr = keyData(dataSaldoInicial);
 
- if(!mapa[kInicio]) mapa[kInicio]={entrada:0,saida:0};
+ if(!mapa[inicioStr]){
+   mapa[inicioStr]={entrada:0,saida:0};
+ }
 
- // ordena datas
  let datas = Object.keys(mapa).sort();
 
  let saldoAtual = saldoInicial;
 
- datas.forEach((k,i)=>{
+ datas.forEach(k=>{
 
-   // 🔥 PRIMEIRA DATA É SEMPRE A DATA DO SALDO
-   if(k === kInicio){
-       saldoPorData[k]={
-         saldoInicial: saldoInicial,
-         entrada: mapa[k].entrada,
-         saida: mapa[k].saida,
-         saldoFinal: saldoInicial + mapa[k].entrada - mapa[k].saida
-       };
+   if(k === inicioStr){
 
-       saldoAtual = saldoPorData[k].saldoFinal;
-   } else if(k > kInicio){
+     saldoPorData[k]={
+       saldoInicial: saldoInicial,
+       entrada: mapa[k].entrada,
+       saida: mapa[k].saida,
+       saldoFinal: saldoInicial + mapa[k].entrada - mapa[k].saida
+     };
 
-       let entrada = mapa[k].entrada;
-       let saida = mapa[k].saida;
+     saldoAtual = saldoPorData[k].saldoFinal;
+   }
 
-       let final = saldoAtual + entrada - saida;
+   else if(k > inicioStr){
 
-       saldoPorData[k]={
-         saldoInicial: saldoAtual,
-         entrada,
-         saida,
-         saldoFinal: final
-       };
+     let entrada = mapa[k].entrada;
+     let saida = mapa[k].saida;
 
-       saldoAtual = final;
+     let final = saldoAtual + entrada - saida;
+
+     saldoPorData[k]={
+       saldoInicial: saldoAtual,
+       entrada,
+       saida,
+       saldoFinal: final
+     };
+
+     saldoAtual = final;
    }
 
  });
@@ -244,14 +246,8 @@ function selecionarTrimestre(t){
  container.innerHTML='';
  document.getElementById('detalheDia').innerHTML='';
 
- // regra: bloquear antes da data inicial
- if(anoSelecionado < dataSaldoInicial.getFullYear()){
-   return;
- }
-
- if(anoSelecionado === dataSaldoInicial.getFullYear() && t === 1){
-   return;
- }
+ if(anoSelecionado < dataSaldoInicial.getFullYear()) return;
+ if(anoSelecionado === dataSaldoInicial.getFullYear() && t === 1) return;
 
  tri[t].forEach(m=>{
 
