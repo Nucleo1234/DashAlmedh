@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>Dashboard Financeiro Profissional</title>
 
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -42,7 +41,6 @@ th:first-child, td:first-child { text-align:left; }
 
 <header>
 <div class="header-top">
-<input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
 <h2>Dashboard Financeiro Profissional</h2>
 </div>
 
@@ -87,13 +85,40 @@ th:first-child, td:first-child { text-align:left; }
 
 <script>
 
+const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_EnjfbqBOJMX5xZrwgPJUTcwXLB6A0Q0_VzEF83lgmjwsz4jZz2hZTd1aRLs4/pub?gid=720565093&output=csv";
+
 let rawData=[];
 let chart;
 const meses=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
+// ===== CSV PARSER (ROBUSTO) =====
+function parseCSV(t){
+ const linhas=[]; let row=[], val='', aspas=false;
+
+ for(let c of t){
+  if(c=='"') aspas=!aspas;
+  else if(c==',' && !aspas){ row.push(val); val=''; }
+  else if((c=='\n'||c=='\r') && !aspas){
+   if(val || row.length){ row.push(val); linhas.push(row); row=[]; val=''; }
+  } else val+=c;
+ }
+ if(val || row.length){ row.push(val); linhas.push(row); }
+
+ return linhas;
+}
+
+// ===== CONVERSÃO CSV → JSON =====
+function csvToJson(linhas){
+ const header = linhas[0];
+ return linhas.slice(1).map(l => {
+  let obj={};
+  header.forEach((h,i)=> obj[h]=l[i]);
+  return obj;
+ });
+}
+
 // ===== AUXILIARES =====
 function parseDate(v){
- if(typeof v==='number') return new Date((v-25569)*86400*1000);
  if(typeof v==='string'){
   let p=v.split(/[\/\-]/);
   if(p.length===3) return new Date(p[2],p[1]-1,p[0]);
@@ -103,7 +128,6 @@ function parseDate(v){
 
 function parseCurrency(v){
  if(!v) return 0;
- if(typeof v==='number') return v;
  return parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0;
 }
 
@@ -122,7 +146,7 @@ function normalize(data){
   data: parseDate(findField(r,['data'])),
   credito: parseCurrency(findField(r,['credito','crédito'])),
   debito: parseCurrency(findField(r,['debito','débito'])),
-  descricao: findField(r,['descrição da conta','descrição','descricao']) || 'Sem descrição'
+  descricao: findField(r,['descrição','descricao','conta']) || 'Sem descrição'
  })).filter(r=>!isNaN(r.data));
 }
 
@@ -143,7 +167,9 @@ function buildChart(){
   labels.push(r.data.toLocaleDateString());
   data.push(saldo);
  });
+
  if(chart) chart.destroy();
+
  chart=new Chart(document.getElementById('saldoChart'),{
   type:'line',
   data:{labels,datasets:[{label:'Saldo acumulado',data}]},
@@ -254,7 +280,7 @@ function buildCustos(){
   if(y==2026){ if(mapa[desc].meses[m+12]===null) mapa[desc].meses[m+12]=0; mapa[desc].meses[m+12]+=valor; }
  });
 
- let ordenado=Object.entries(mapa).sort((a,b)=>a[0].localeCompare(b[0],'pt-BR',{sensitivity:'base'}));
+ let ordenado=Object.entries(mapa).sort((a,b)=>a[0].localeCompare(b[0],'pt-BR'));
 
  let totaisMeses=Array(24).fill(0);
  let totalGeral=0;
@@ -290,35 +316,23 @@ function buildCustos(){
  document.getElementById('custosTable').innerHTML=header+rows;
 }
 
-// ===== IMPORTAÇÃO =====
-function parseFile(file){
- let reader=new FileReader();
+// ===== LOAD AUTOMÁTICO =====
+fetch(url)
+.then(r=>r.text())
+.then(data=>{
+ const linhas = parseCSV(data);
+ const json = csvToJson(linhas);
 
- reader.onload=function(e){
-  let data=new Uint8Array(e.target.result);
-  let wb=XLSX.read(data,{type:'array'});
-  let sheet=wb.Sheets[wb.SheetNames[0]];
-  let json=XLSX.utils.sheet_to_json(sheet,{defval:''});
+ rawData = normalize(json);
 
-  rawData=normalize(json);
-
-  if(rawData.length===0){
-   alert("Nenhum dado encontrado.");
-   return;
-  }
-
-  calcularTotais();
-  buildChart();
-  buildYear(2025,'table2025');
-  buildYear(2026,'table2026');
-  buildCustos();
- };
-
- reader.readAsArrayBuffer(file);
-}
-
-document.getElementById('fileInput').addEventListener('change',e=>{
- if(e.target.files[0]) parseFile(e.target.files[0]);
+ calcularTotais();
+ buildChart();
+ buildYear(2025,'table2025');
+ buildYear(2026,'table2026');
+ buildCustos();
+})
+.catch(err=>{
+ console.error("Erro ao carregar dados:", err);
 });
 
 </script>
