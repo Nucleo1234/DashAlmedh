@@ -158,52 +158,51 @@ function atualizarAno(){
  document.getElementById('detalheDia').innerHTML='';
 }
 
-// ===== MOTOR CORRETO 🔥 =====
+// ===== MOTOR CORRIGIDO 🔥 =====
 function calcularSaldosAno(){
 
- saldoPorData={};
+ saldoPorData = {};
 
- let mapa={};
+ let mapa = {};
 
  dadosFiltrados.forEach(d=>{
-  let k=d.data.toISOString().slice(0,10);
+  let k = d.data.toISOString().slice(0,10);
 
-  if(!mapa[k]) mapa[k]={entrada:0,saida:0};
+  if(!mapa[k]) mapa[k] = {entrada:0,saida:0};
 
-  if(d.tipo==='entrada') mapa[k].entrada+=d.valor;
-  else mapa[k].saida+=d.valor;
+  if(d.tipo==='entrada') mapa[k].entrada += d.valor;
+  else mapa[k].saida += d.valor;
  });
 
- // 🔥 GARANTE DATA INICIAL
  let dataInicio = dataSaldoInicial.toISOString().slice(0,10);
- if(!mapa[dataInicio]) mapa[dataInicio]={entrada:0,saida:0};
 
- let datas=Object.keys(mapa).sort();
+ // 🔥 GARANTE DATA INICIAL (MESMO SEM MOVIMENTO)
+ if(!mapa[dataInicio]){
+   mapa[dataInicio] = {entrada:0,saida:0};
+ }
+
+ // 🔥 REMOVE TUDO ANTES DA DATA INICIAL
+ let datas = Object.keys(mapa)
+   .filter(d => d >= dataInicio)
+   .sort();
 
  let saldoAtual = saldoInicial;
- let iniciou=false;
 
- datas.forEach(k=>{
+ datas.forEach(k => {
 
-  if(k === dataInicio){
-    iniciou=true;
-  }
+   let entrada = mapa[k].entrada || 0;
+   let saida = mapa[k].saida || 0;
 
-  if(!iniciou) return;
+   let saldoFinal = saldoAtual + entrada - saida;
 
-  let entrada = mapa[k].entrada;
-  let saida = mapa[k].saida;
+   saldoPorData[k] = {
+     saldoInicial: saldoAtual,
+     entrada: entrada,
+     saida: saida,
+     saldoFinal: saldoFinal
+   };
 
-  let final = saldoAtual + entrada - saida;
-
-  saldoPorData[k] = {
-    saldoInicial: saldoAtual,
-    entrada,
-    saida,
-    saldoFinal: final
-  };
-
-  saldoAtual = final;
+   saldoAtual = saldoFinal;
  });
 }
 
@@ -240,20 +239,19 @@ function gerarResumoTrimestres(){
  }
 }
 
-// ===== CLIQUE TRIMESTRE (AJUSTE FINAL 🔥) =====
+// ===== TRIMESTRE =====
 function selecionarTrimestre(t){
 
  let container=document.getElementById('meses');
  container.innerHTML='';
  document.getElementById('detalheDia').innerHTML='';
 
- // regra: bloquear antes da data
  let triData = tri[t];
  let mesInicial = triData[0];
 
  if(anoSelecionado < dataSaldoInicial.getFullYear() ||
    (anoSelecionado === dataSaldoInicial.getFullYear() && mesInicial < dataSaldoInicial.getMonth())){
-    return; // limpa e não mostra nada
+    return;
  }
 
  tri[t].forEach(m=>{
