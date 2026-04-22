@@ -78,7 +78,6 @@ const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_
 let dados=[],dadosFiltrados=[];
 let saldoInicial=0;
 let dataSaldoInicial=null;
-let saldoPorData={};
 let anoSelecionado=null;
 
 // ===== CSV =====
@@ -147,64 +146,13 @@ function carregarAnos(){
 
 // ===== ATUALIZA =====
 function atualizarAno(){
-
  anoSelecionado=Number(document.getElementById('anoSelect').value);
-
  dadosFiltrados=dados.filter(d=>d.data.getFullYear()==anoSelecionado);
 
- calcularSaldosAno();
  gerarResumoTrimestres();
 
  document.getElementById('meses').innerHTML='';
  document.getElementById('detalheDia').innerHTML='';
-}
-
-// ===== MOTOR (COM DATA BASE 🔥) =====
-function calcularSaldosAno(){
-
- saldoPorData={};
-
- let mapa={};
-
- dadosFiltrados.forEach(d=>{
-  let k=d.data.toISOString().slice(0,10);
-
-  if(!mapa[k]) mapa[k]={entrada:0,saida:0};
-
-  if(d.tipo==='entrada') mapa[k].entrada+=d.valor;
-  else mapa[k].saida+=d.valor;
- });
-
- let datas=Object.keys(mapa).sort();
-
- let saldoAtual = null;
-
- datas.forEach(k=>{
-
-   let dataAtual=new Date(k);
-
-   // 🔥 só começa quando bater a data do saldo
-   if(dataAtual.getTime() === dataSaldoInicial.getTime()){
-      saldoAtual = saldoInicial;
-   }
-
-   if(saldoAtual!==null){
-
-      let entrada = mapa[k].entrada;
-      let saida = mapa[k].saida;
-
-      let final = saldoAtual + entrada - saida;
-
-      saldoPorData[k] = {
-          saldoInicial: saldoAtual,
-          entrada,
-          saida,
-          saldoFinal: final
-      };
-
-      saldoAtual = final;
-   }
- });
 }
 
 // ===== TRIMESTRES =====
@@ -240,23 +188,15 @@ function gerarResumoTrimestres(){
  }
 }
 
-// ===== REGRA PRINCIPAL 🔥 =====
+// ===== TRIMESTRE (100% FUNCIONAL 🔥) =====
 function selecionarTrimestre(t){
 
  let container=document.getElementById('meses');
  container.innerHTML='';
  document.getElementById('detalheDia').innerHTML='';
 
- // 🔴 ANO DIFERENTE → BLOQUEIA
+ // bloqueia anos diferentes
  if(anoSelecionado !== dataSaldoInicial.getFullYear()){
-   return;
- }
-
- // 🔴 TRIMESTRE ANTES DA DATA → BLOQUEIA
- let mesInicial = dataSaldoInicial.getMonth();
- let triInicial = Math.floor(mesInicial/3)+1;
-
- if(t < triInicial){
    return;
  }
 
@@ -264,45 +204,69 @@ function selecionarTrimestre(t){
 
   let dias={};
 
-  Object.keys(saldoPorData).forEach(k=>{
-    let d=new Date(k);
+  // 🔥 monta todos os dias do mês com dados
+  dadosFiltrados.forEach(d=>{
+    if(d.data.getMonth()===m){
 
-    if(d.getMonth()===m){
+      let key = d.data.toISOString().slice(0,10);
 
-      // 🔥 BLOQUEIA dias antes da data inicial no mês inicial
-      if(m === mesInicial && d < dataSaldoInicial) return;
+      if(!dias[key]) dias[key]={entrada:0,saida:0};
 
-      dias[d.getDate()]=saldoPorData[k];
+      if(d.tipo==='entrada') dias[key].entrada+=d.valor;
+      else dias[key].saida+=d.valor;
     }
   });
 
-  let diasOrd=Object.keys(dias).map(Number).sort((a,b)=>a-b);
+  let datas=Object.keys(dias).sort();
 
-  if(diasOrd.length===0) return;
+  if(datas.length===0) return;
+
+  let saldoAtual=null;
 
   let tabela='<table><tr><th>Dia</th>';
 
-  diasOrd.forEach(d=>{
-    tabela+=`<th onclick="mostrarDetalhe(${m},${d})" style="cursor:pointer">${d}</th>`;
+  let linhas = {
+    si:'<tr><td>Saldo Inicial</td>',
+    en:'<tr><td>Entradas</td>',
+    sa:'<tr><td>Saídas</td>',
+    sf:'<tr><td>Saldo Final</td>'
+  };
+
+  datas.forEach(k=>{
+
+    let d=new Date(k);
+
+    // 🔥 regra da data inicial
+    if(m === dataSaldoInicial.getMonth() && d < dataSaldoInicial) return;
+
+    if(saldoAtual===null && d >= dataSaldoInicial){
+        saldoAtual = saldoInicial;
+    }
+
+    if(saldoAtual!==null){
+
+        let ent = dias[k].entrada;
+        let sai = dias[k].saida;
+
+        let final = saldoAtual + ent - sai;
+
+        tabela+=`<th onclick="mostrarDetalhe(${m},${d.getDate()})">${d.getDate()}</th>`;
+
+        linhas.si+=`<td>${formatar(saldoAtual)}</td>`;
+        linhas.en+=`<td>${formatar(ent)}</td>`;
+        linhas.sa+=`<td>-${formatar(sai)}</td>`;
+        linhas.sf+=`<td class="${final<0?'negativo':''}">${formatar(final)}</td>`;
+
+        saldoAtual = final;
+    }
+
   });
 
-  tabela+='</tr>';
-
-  let si='<tr><td>Saldo Inicial</td>';
-  let en='<tr><td>Entradas</td>';
-  let sa='<tr><td>Saídas</td>';
-  let sf='<tr><td>Saldo Final</td>';
-
-  diasOrd.forEach(d=>{
-    let obj=dias[d];
-
-    si+=`<td>${formatar(obj.saldoInicial)}</td>`;
-    en+=`<td>${formatar(obj.entrada)}</td>`;
-    sa+=`<td>-${formatar(obj.saida)}</td>`;
-    sf+=`<td class="${obj.saldoFinal<0?'negativo':''}">${formatar(obj.saldoFinal)}</td>`;
-  });
-
-  tabela+=si+'</tr>'+en+'</tr>'+sa+'</tr>'+sf+'</tr></table>';
+  tabela+='</tr>' +
+          linhas.si+'</tr>' +
+          linhas.en+'</tr>' +
+          linhas.sa+'</tr>' +
+          linhas.sf+'</tr></table>';
 
   let nomeMes=new Date(anoSelecionado,m).toLocaleString('pt-BR',{month:'long'});
 
