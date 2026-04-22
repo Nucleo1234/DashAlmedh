@@ -140,7 +140,7 @@ function br(v){
     return parseFloat(v?.replace(/\./g,'').replace(',','.'))||0;
 }
 
-// ===== NORMALIZAÇÃO CORRETA =====
+// ===== NORMALIZA =====
 function normalize(linhas){
     return linhas.slice(1).map(l=>({
         data: parseDate(l[0]),
@@ -157,24 +157,6 @@ function calcularTotais(){
     document.getElementById('totalEntradas').innerText=e.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
     document.getElementById('totalSaidas').innerText=s.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
     document.getElementById('saldoTotal').innerText=(e-s).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-}
-
-// ===== GRÁFICO =====
-function buildChart(){
-    let saldo=0, labels=[], data=[];
-    rawData.sort((a,b)=>a.data-b.data).forEach(r=>{
-        saldo+=r.credito-r.debito;
-        labels.push(r.data.toLocaleDateString());
-        data.push(saldo);
-    });
-
-    if(chart) chart.destroy();
-
-    chart=new Chart(document.getElementById('saldoChart'),{
-        type:'line',
-        data:{labels,datasets:[{label:'Saldo',data}]},
-        options:{maintainAspectRatio:false}
-    });
 }
 
 // ===== ANO =====
@@ -213,12 +195,11 @@ function buildYear(y,id){
 // ===== MÊS =====
 function loadMonth(y,m){
 
+    document.getElementById('mensalTitulo').innerText = `Visão Mensal - ${meses[m]}/${y}`;
+
     let dados=rawData.filter(r=>r.data.getFullYear()==y&&r.data.getMonth()==m);
 
     let totalE=0,totalS=0;
-
-    let html='<tr><th>Dia</th><th>Entrada</th><th>Saída</th><th>Saldo</th></tr>';
-
     let dias={};
 
     dados.forEach(r=>{
@@ -228,12 +209,14 @@ function loadMonth(y,m){
         dias[d].s+=r.debito;
     });
 
-    Object.keys(dias).forEach(d=>{
+    let html='<tr><th>Dia</th><th>Entrada</th><th>Saída</th><th>Saldo</th></tr>';
+
+    Object.keys(dias).sort((a,b)=>a-b).forEach(d=>{
         let r=dias[d];
         totalE+=r.e;
         totalS+=r.s;
 
-        html+=`<tr>
+        html+=`<tr onclick="loadDay(${y},${m},${d})" style="cursor:pointer">
         <td>${d}</td>
         <td>${r.e.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
         <td>${r.s.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
@@ -251,8 +234,37 @@ function loadMonth(y,m){
     document.getElementById('mensalTable').innerHTML=html;
 }
 
+// ===== DIA =====
+function loadDay(y,m,d){
+
+    document.getElementById('diarioTitulo').innerText = `Detalhes - ${d}/${m+1}/${y}`;
+
+    let dados=rawData.filter(r=>
+        r.data.getFullYear()==y &&
+        r.data.getMonth()==m &&
+        r.data.getDate()==d
+    );
+
+    let html='<tr><th>Descrição</th><th>Entrada</th><th>Saída</th><th>Saldo</th></tr>';
+
+    dados.forEach(r=>{
+        let entrada=r.credito||0;
+        let saida=r.debito||0;
+
+        html+=`<tr>
+        <td>${r.descricao}</td>
+        <td>${entrada.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+        <td>${saida.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+        <td>${(entrada-saida).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+        </tr>`;
+    });
+
+    document.getElementById('diarioTable').innerHTML=html;
+}
+
 // ===== CUSTOS =====
 function buildCustos(){
+
     let mapa={};
     let mesesUsados=new Set();
 
@@ -273,30 +285,43 @@ function buildCustos(){
     let mesesOrdenados=[...mesesUsados].sort();
 
     let header='<tr><th>Conta</th>';
-
     mesesOrdenados.forEach(m=>{
         let [y,mo]=m.split("-");
         header+=`<th>${meses[mo]}/${y}</th>`;
     });
-
     header+='<th>Total</th></tr>';
 
     let rows='';
+    let totaisMeses={};
+    let totalGeral=0;
 
-    Object.entries(mapa).forEach(([conta,obj])=>{
+    let contasOrdenadas=Object.keys(mapa).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+
+    contasOrdenadas.forEach(conta=>{
         let total=0;
-
         rows+=`<tr><td>${conta}</td>`;
 
         mesesOrdenados.forEach(m=>{
-            let v=obj[m]||0;
+            let v=mapa[conta][m]||0;
             total+=v;
+
+            if(!totaisMeses[m]) totaisMeses[m]=0;
+            totaisMeses[m]+=v;
 
             rows+=`<td>${v? v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):''}</td>`;
         });
 
+        totalGeral+=total;
+
         rows+=`<td><b>${total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</b></td></tr>`;
     });
+
+    // TOTAL FINAL
+    rows+=`<tr style="background:#eee;font-weight:bold"><td>Total</td>`;
+    mesesOrdenados.forEach(m=>{
+        rows+=`<td>${(totaisMeses[m]||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>`;
+    });
+    rows+=`<td>${totalGeral.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td></tr>`;
 
     document.getElementById('custosTable').innerHTML=header+rows;
 }
@@ -309,7 +334,6 @@ fetch(url)
     rawData=normalize(linhas);
 
     calcularTotais();
-    buildChart();
     buildYear(2025,'table2025');
     buildYear(2026,'table2026');
     buildCustos();
