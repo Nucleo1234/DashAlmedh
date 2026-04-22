@@ -94,7 +94,6 @@ function parseCSV(t){
     return l;
 }
 
-// 💰 CONVERSÃO CORRETA
 function br(v){
     if(!v) return 0;
     return parseFloat(
@@ -119,18 +118,19 @@ fetch(url).then(r=>r.text()).then(data=>{
 
     dados = linhas.slice(1).map(l=>{
 
-        let valor = br(l[2]); // ✅ COLUNA C
+        let referencia = (l[4] || '').toUpperCase().trim(); // COLUNA E
+        let valor = br(l[2]); // COLUNA C
 
         return {
-            data: parseData(l[3]),     // Coluna D
+            data: parseData(l[3]), // COLUNA D
             valor: valor,
-            descricao: l[10],          // Coluna K
-            tipo: valor >= 0 ? 'entrada' : 'saida'
+            descricao: l[10],
+            tipo: referencia.includes('RECEBER') ? 'entrada' :
+                  referencia.includes('PAGAR') ? 'saida' : null
         }
 
-    }).filter(d=>d.data instanceof Date && !isNaN(d.data));
+    }).filter(d=>d.data && d.tipo);
 
-    // SALDO
     saldoInicial = br(linhas[1][6]);     
     dataSaldoInicial = parseData(linhas[1][7]); 
 
@@ -139,13 +139,9 @@ fetch(url).then(r=>r.text()).then(data=>{
 
 // ===== ANOS =====
 function carregarAnos(){
-    let anos=[...new Set(dados.map(d=>d.data.getFullYear()))]
-        .filter(a=>!isNaN(a))
-        .sort((a,b)=>a-b);
-
+    let anos=[...new Set(dados.map(d=>d.data.getFullYear()))].sort((a,b)=>a-b);
     let s=document.getElementById('anoSelect');
     s.innerHTML='<option>Selecione</option>';
-
     anos.forEach(a=> s.innerHTML+=`<option>${a}</option>`);
 }
 
@@ -173,7 +169,7 @@ function calcularSaldosAno(){
         if(!mapa[key]) mapa[key]={entrada:0,saida:0};
 
         if(d.tipo==='entrada') mapa[key].entrada+=d.valor;
-        else mapa[key].saida+=Math.abs(d.valor);
+        if(d.tipo==='saida') mapa[key].saida+=d.valor;
     });
 
     let datas = Object.keys(mapa).sort();
@@ -218,7 +214,7 @@ function gerarResumoTrimestres(){
 
         dadosFiltrados.forEach(d=>{
             if(mesesTri[t].includes(d.data.getMonth())){
-                d.tipo==='entrada'?e+=d.valor:s+=Math.abs(d.valor);
+                d.tipo==='entrada'?e+=d.valor:s+=d.valor;
             }
         });
 
@@ -298,7 +294,7 @@ function mostrarDetalhe(mes,dia){
     dadosFiltrados.forEach(d=>{
         if(d.data.getMonth()===mes && d.data.getDate()==dia){
             if(d.tipo==='entrada'){ entradas.push(d); totE+=d.valor;}
-            else{ saidas.push(d); totS+=Math.abs(d.valor);}
+            else{ saidas.push(d); totS+=d.valor;}
         }
     });
 
