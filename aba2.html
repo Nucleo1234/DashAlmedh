@@ -2,51 +2,81 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Dashboard Financeiro Profissional</title>
+<title>Dashboard Financeiro</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body { font-family: Arial; margin:0; background:#eef1f5; }
-header { padding:15px; background:#1f2d3d; color:#fff; }
-.header-top { display:flex; justify-content:space-between; align-items:center; }
-.header-cards { display:flex; gap:15px; margin-top:10px; }
-.card-header { background:#273849; padding:10px; border-radius:8px; text-align:center; flex:1; }
+
+header {
+    padding:15px;
+    background:#1f2d3d;
+    color:#fff;
+}
+
+.header-cards {
+    display:flex;
+    gap:15px;
+    margin-top:10px;
+}
+
+.card-header {
+    background:#273849;
+    padding:10px;
+    border-radius:8px;
+    text-align:center;
+    flex:1;
+}
 
 .container { padding:20px; }
-.section { margin-bottom:25px; }
-.card { background:#fff; padding:15px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
 
-table { width:100%; border-collapse: collapse; }
-th, td { padding:6px; font-size:12px; border:1px solid #ccc; }
-th { background:#34495e; color:#fff; }
+.section { margin-bottom:25px; }
+
+.card {
+    background:#fff;
+    padding:15px;
+    border-radius:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+}
+
+table {
+    width:100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding:6px;
+    font-size:12px;
+    border:1px solid #ccc;
+}
+
+th {
+    background:#34495e;
+    color:#fff;
+}
+
 td { text-align:right; }
+
 th:first-child, td:first-child { text-align:left; }
+
 .desc { text-align:left !important; }
 
 .flex { display:flex; gap:20px; }
+
 .small-chart { height:250px !important; }
 
-#custosTable th:first-child,
-#custosTable td:first-child {
- position: sticky;
- left: 0;
- background: #fff;
-}
-#custosTable th:first-child { background:#34495e; }
 </style>
 </head>
 
 <body>
 
 <header>
-<div class="header-top">
-<h2>Dashboard Financeiro Profissional</h2>
-</div>
+<h2>Dashboard Financeiro</h2>
 
 <div class="header-cards">
-<div class="card-header"><div>Total de Entradas</div><div id="totalEntradas">R$ 0</div></div>
-<div class="card-header"><div>Total de Saídas</div><div id="totalSaidas">R$ 0</div></div>
+<div class="card-header"><div>Total Entradas</div><div id="totalEntradas">R$ 0</div></div>
+<div class="card-header"><div>Total Saídas</div><div id="totalSaidas">R$ 0</div></div>
 <div class="card-header"><div>Saldo</div><div id="saldoTotal">R$ 0</div></div>
 </div>
 </header>
@@ -75,7 +105,7 @@ th:first-child, td:first-child { text-align:left; }
 </div>
 
 <div class="section card">
-<h3>Resumo por Conta de Custo (2025 / 2026)</h3>
+<h3>Resumo por Conta de Custo</h3>
 <div style="overflow:auto">
 <table id="custosTable"></table>
 </div>
@@ -89,250 +119,174 @@ const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQcvepFTyG2MaXqLKF_
 
 let rawData=[];
 let chart;
+
 const meses=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
-// ===== CSV PARSER (ROBUSTO) =====
+// ===== CSV =====
 function parseCSV(t){
- const linhas=[]; let row=[], val='', aspas=false;
-
- for(let c of t){
-  if(c=='"') aspas=!aspas;
-  else if(c==',' && !aspas){ row.push(val); val=''; }
-  else if((c=='\n'||c=='\r') && !aspas){
-   if(val || row.length){ row.push(val); linhas.push(row); row=[]; val=''; }
-  } else val+=c;
- }
- if(val || row.length){ row.push(val); linhas.push(row); }
-
- return linhas;
+    const l=[];let r=[],v='',q=false;
+    for(let c of t){
+        if(c=='"') q=!q;
+        else if(c==','&&!q){r.push(v);v=''}
+        else if((c=='\n'||c=='\r')&&!q){
+            if(v||r.length){r.push(v);l.push(r);r=[];v=''}
+        } else v+=c;
+    }
+    if(v||r.length){r.push(v);l.push(r)}
+    return l;
 }
 
-// ===== CONVERSÃO CSV → JSON =====
-function csvToJson(linhas){
- const header = linhas[0];
- return linhas.slice(1).map(l => {
-  let obj={};
-  header.forEach((h,i)=> obj[h]=l[i]);
-  return obj;
- });
-}
-
-// ===== AUXILIARES =====
+// ===== PARSE =====
 function parseDate(v){
- if(typeof v==='string'){
-  let p=v.split(/[\/\-]/);
-  if(p.length===3) return new Date(p[2],p[1]-1,p[0]);
- }
- return new Date(v);
+    if(!v) return null;
+    let p=v.split("/");
+    return new Date(p[2],p[1]-1,p[0]);
 }
 
-function parseCurrency(v){
- if(!v) return 0;
- return parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0;
+function br(v){
+    return parseFloat(v?.replace(/\./g,'').replace(',','.'))||0;
 }
 
-function findField(o,n){
- for(let k in o){
-  let key=k.toLowerCase().trim();
-  for(let x of n){
-   if(key.includes(x)) return o[k];
-  }
- }
- return null;
-}
-
-function normalize(data){
- return data.map(r=>({
-  data: parseDate(findField(r,['data'])),
-  credito: parseCurrency(findField(r,['credito','crédito'])),
-  debito: parseCurrency(findField(r,['debito','débito'])),
-  descricao: findField(r,['descrição','descricao','conta']) || 'Sem descrição'
- })).filter(r=>!isNaN(r.data));
+// ===== NORMALIZA =====
+function normalize(linhas){
+    return linhas.slice(1).map(l=>({
+        data: parseDate(l[0]),
+        credito: br(l[3]),
+        debito: br(l[4]),
+        descricao: l[10] || "Sem descrição" // 🔥 COLUNA K
+    })).filter(r=>r.data);
 }
 
 // ===== KPI =====
 function calcularTotais(){
- let e=0,s=0;
- rawData.forEach(r=>{e+=r.credito; s+=r.debito;});
- document.getElementById('totalEntradas').innerText=e.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
- document.getElementById('totalSaidas').innerText=s.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
- document.getElementById('saldoTotal').innerText=(e-s).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    let e=0,s=0;
+    rawData.forEach(r=>{e+=r.credito; s+=r.debito;});
+    document.getElementById('totalEntradas').innerText=e.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    document.getElementById('totalSaidas').innerText=s.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    document.getElementById('saldoTotal').innerText=(e-s).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 }
 
 // ===== GRÁFICO =====
 function buildChart(){
- let saldo=0, labels=[], data=[];
- rawData.sort((a,b)=>a.data-b.data).forEach(r=>{
-  saldo+=r.credito-r.debito;
-  labels.push(r.data.toLocaleDateString());
-  data.push(saldo);
- });
+    let saldo=0, labels=[], data=[];
+    rawData.sort((a,b)=>a.data-b.data).forEach(r=>{
+        saldo+=r.credito-r.debito;
+        labels.push(r.data.toLocaleDateString());
+        data.push(saldo);
+    });
 
- if(chart) chart.destroy();
+    if(chart) chart.destroy();
 
- chart=new Chart(document.getElementById('saldoChart'),{
-  type:'line',
-  data:{labels,datasets:[{label:'Saldo acumulado',data}]},
-  options:{maintainAspectRatio:false}
- });
+    chart=new Chart(document.getElementById('saldoChart'),{
+        type:'line',
+        data:{labels,datasets:[{label:'Saldo',data}]},
+        options:{maintainAspectRatio:false}
+    });
 }
 
-// ===== ANO =====
-function processYear(y){
- let arr=Array(12).fill().map(()=>({e:0,s:0,saldo:0}));
-
- rawData.forEach(r=>{
-  if(r.data.getFullYear()==y){
-   let m=r.data.getMonth();
-   arr[m].e+=r.credito;
-   arr[m].s+=r.debito;
-  }
- });
-
- arr.forEach(r=>r.saldo=r.e-r.s);
- return arr;
-}
-
-function buildYear(y,id){
- let d=processYear(y);
- let html='<tr><th>Mês</th><th>Entrada</th><th>Saída</th><th>Saldo</th></tr>';
-
- d.forEach((r,i)=>{
-  html+=`<tr>
-  <td>${meses[i]}</td>
-  <td>${r.e.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
-  <td>${r.s.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
-  <td><a onclick="loadMonth(${y},${i})">${r.saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</a></td>
-  </tr>`;
- });
-
- document.getElementById(id).innerHTML=html;
-}
-
-// ===== MÊS =====
+// ===== VISÃO MENSAL =====
 function loadMonth(y,m){
- document.getElementById('diarioTable').innerHTML='';
+    let dados=rawData.filter(r=>r.data.getFullYear()==y&&r.data.getMonth()==m);
 
- let dados=rawData.filter(r=>r.data.getFullYear()==y&&r.data.getMonth()==m);
+    let totalE=0,totalS=0;
 
- document.getElementById('mensalTitulo').innerText=`Visão Mensal - ${meses[m]} ${y}`;
+    let html='<tr><th>Dia</th><th>Entrada</th><th>Saída</th><th>Saldo</th></tr>';
 
- let dias={};
+    let dias={};
 
- dados.forEach(r=>{
-  let d=r.data.getDate();
-  if(!dias[d]) dias[d]={e:0,s:0};
-  dias[d].e+=r.credito;
-  dias[d].s+=r.debito;
- });
+    dados.forEach(r=>{
+        let d=r.data.getDate();
+        if(!dias[d]) dias[d]={e:0,s:0};
+        dias[d].e+=r.credito;
+        dias[d].s+=r.debito;
+    });
 
- let html='<tr><th>Dia</th><th>Entrada</th><th>Saída</th><th>Saldo</th></tr>';
+    Object.keys(dias).forEach(d=>{
+        let r=dias[d];
+        totalE+=r.e;
+        totalS+=r.s;
 
- Object.keys(dias).forEach(d=>{
-  let r=dias[d];
-  let saldo=r.e-r.s;
+        html+=`<tr>
+        <td>${d}</td>
+        <td>${r.e.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+        <td>${r.s.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+        <td>${(r.e-r.s).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+        </tr>`;
+    });
 
-  html+=`<tr>
-  <td>${d}</td>
-  <td>${r.e.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
-  <td>${r.s.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
-  <td><a onclick="loadDay(${y},${m},${d})">${saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</a></td>
-  </tr>`;
- });
+    // 🔥 TOTAL
+    html+=`<tr style="background:#eee;font-weight:bold">
+    <td>Total</td>
+    <td>${totalE.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+    <td>${totalS.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+    <td>${(totalE-totalS).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+    </tr>`;
 
- document.getElementById('mensalTable').innerHTML=html;
+    document.getElementById('mensalTable').innerHTML=html;
 }
 
-// ===== DIA =====
-function loadDay(y,m,d){
- let dados=rawData.filter(r=>r.data.getFullYear()==y&&r.data.getMonth()==m&&r.data.getDate()==d);
-
- document.getElementById('diarioTitulo').innerText=`Detalhes - ${d}/${m+1}/${y}`;
-
- let html='<tr><th>Descrição</th><th>Entrada</th><th>Saída</th><th>Saldo</th></tr>';
-
- dados.forEach(r=>{
-  let saldo=r.credito-r.debito;
-
-  html+=`<tr>
-  <td class="desc">${r.descricao}</td>
-  <td>${r.credito.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
-  <td>${r.debito.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
-  <td>${saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
-  </tr>`;
- });
-
- document.getElementById('diarioTable').innerHTML=html;
-}
-
-// ===== CUSTOS =====
+// ===== CUSTOS DINÂMICO =====
 function buildCustos(){
- let mapa={};
 
- rawData.forEach(r=>{
-  let desc=r.descricao;
-  if(!mapa[desc]) mapa[desc]={meses:Array(24).fill(null)};
-  let y=r.data.getFullYear();
-  let m=r.data.getMonth();
-  let valor=r.credito-r.debito;
+    let mapa={};
+    let mesesUsados=new Set();
 
-  if(y==2025){ if(mapa[desc].meses[m]===null) mapa[desc].meses[m]=0; mapa[desc].meses[m]+=valor; }
-  if(y==2026){ if(mapa[desc].meses[m+12]===null) mapa[desc].meses[m+12]=0; mapa[desc].meses[m+12]+=valor; }
- });
+    rawData.forEach(r=>{
+        let key=r.descricao;
+        let mes=r.data.getMonth();
+        let ano=r.data.getFullYear();
+        let id=ano+"-"+mes;
 
- let ordenado=Object.entries(mapa).sort((a,b)=>a[0].localeCompare(b[0],'pt-BR'));
+        mesesUsados.add(id);
 
- let totaisMeses=Array(24).fill(0);
- let totalGeral=0;
+        if(!mapa[key]) mapa[key]={};
 
- let header='<tr><th>Conta</th>';
- meses.forEach(m=>header+=`<th>${m}/25</th>`);
- meses.forEach(m=>header+=`<th>${m}/26</th>`);
- header+='<th>Total</th></tr>';
+        if(!mapa[key][id]) mapa[key][id]=0;
 
- let rows='';
+        mapa[key][id]+= (r.credito-r.debito);
+    });
 
- ordenado.forEach(([k,obj])=>{
-  let totalLinha=0;
-  rows+=`<tr><td class="desc">${k}</td>`;
-  obj.meses.forEach((v,i)=>{
-   if(v!==null){
-    totalLinha+=v;
-    totaisMeses[i]+=v;
-   }
-   rows+=`<td>${v===null?'':v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>`;
-  });
-  totalGeral+=totalLinha;
-  rows+=`<td><b>${totalLinha.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</b></td></tr>`;
- });
+    let mesesOrdenados=[...mesesUsados].sort();
 
- rows+=`<tr style="background:#f0f0f0;font-weight:bold">
- <td class="desc">TOTAL</td>`;
- totaisMeses.forEach(v=>{
-  rows+=`<td>${v===0?'':v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>`;
- });
- rows+=`<td>${totalGeral.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td></tr>`;
+    let header='<tr><th>Conta</th>';
 
- document.getElementById('custosTable').innerHTML=header+rows;
+    mesesOrdenados.forEach(m=>{
+        let [y,mo]=m.split("-");
+        header+=`<th>${meses[mo]}/${y}</th>`;
+    });
+
+    header+='<th>Total</th></tr>';
+
+    let rows='';
+
+    Object.entries(mapa).forEach(([conta,obj])=>{
+        let total=0;
+
+        rows+=`<tr><td class="desc">${conta}</td>`;
+
+        mesesOrdenados.forEach(m=>{
+            let v=obj[m]||0;
+            total+=v;
+
+            rows+=`<td>${v? v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):''}</td>`;
+        });
+
+        rows+=`<td><b>${total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</b></td></tr>`;
+    });
+
+    document.getElementById('custosTable').innerHTML=header+rows;
 }
 
-// ===== LOAD AUTOMÁTICO =====
+// ===== LOAD =====
 fetch(url)
 .then(r=>r.text())
 .then(data=>{
- const linhas = parseCSV(data);
- const json = csvToJson(linhas);
+    const linhas=parseCSV(data);
+    rawData=normalize(linhas);
 
- rawData = normalize(json);
-
- calcularTotais();
- buildChart();
- buildYear(2025,'table2025');
- buildYear(2026,'table2026');
- buildCustos();
-})
-.catch(err=>{
- console.error("Erro ao carregar dados:", err);
+    calcularTotais();
+    buildChart();
+    buildCustos();
 });
 
 </script>
