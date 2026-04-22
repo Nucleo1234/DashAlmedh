@@ -134,9 +134,10 @@ function carregarAnos(){
 // ===== ATUALIZA =====
 function atualizarAno(){
 
- anoSelecionado=Number(document.getElementById('anoSelect').value);
+ anoSelecionado = parseInt(document.getElementById('anoSelect').value);
+ if(!anoSelecionado) return;
 
- dadosFiltrados=dados.filter(d=>d.data.getFullYear()==anoSelecionado);
+ dadosFiltrados = dados.filter(d => d.data.getFullYear() === anoSelecionado);
 
  calcularSaldosAno();
  gerarResumoTrimestres();
@@ -161,7 +162,6 @@ function calcularSaldosAno(){
   else mapa[k].saida+=d.valor;
  });
 
- // 🔥 DATA INICIAL EM STRING (SEM FUSO)
  let inicioStr = keyData(dataSaldoInicial);
 
  if(!mapa[inicioStr]){
