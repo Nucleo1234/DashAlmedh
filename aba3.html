@@ -132,7 +132,7 @@ fetch(url).then(r=>r.text()).then(txt=>{
 
  }).filter(d=>d.data && d.tipo);
 
- // saldo inicial
+ // saldo inicial (Coluna G e H)
  saldoInicial = br(linhas[1][6]);
  dataSaldoInicial = converterData(linhas[1][7]);
 
@@ -160,7 +160,7 @@ function atualizarAno(){
  document.getElementById('detalheDia').innerHTML='';
 }
 
-// ===== MOTOR =====
+// ===== MOTOR (CORRIGIDO 🔥) =====
 function calcularSaldosAno(){
 
  saldoPorData={};
@@ -178,27 +178,24 @@ function calcularSaldosAno(){
 
  let datas=Object.keys(mapa).sort();
 
- let saldoAtual=null;
+ // 🔥 SEMPRE INICIA O SALDO
+ let saldoAtual = saldoInicial;
 
  datas.forEach(k=>{
 
-  let d=new Date(k);
+    let entrada = mapa[k].entrada;
+    let saida = mapa[k].saida;
 
-  if(d.toDateString()===dataSaldoInicial.toDateString()){
-    saldoAtual=saldoInicial;
-  }
+    let final = saldoAtual + entrada - saida;
 
-  if(saldoAtual!==null){
+    saldoPorData[k] = {
+        saldoInicial: saldoAtual,
+        entrada,
+        saida,
+        saldoFinal: final
+    };
 
-    let e=mapa[k].entrada;
-    let s=mapa[k].saida;
-
-    let final=saldoAtual+e-s;
-
-    saldoPorData[k]={saldoInicial:saldoAtual,entrada:e,saida:s,saldoFinal:final};
-
-    saldoAtual=final;
-  }
+    saldoAtual = final;
  });
 }
 
@@ -235,7 +232,7 @@ function gerarResumoTrimestres(){
  }
 }
 
-// ===== CLIQUE TRIMESTRE (CORRIGIDO) =====
+// ===== TRIMESTRE =====
 function selecionarTrimestre(t){
 
  let container=document.getElementById('meses');
