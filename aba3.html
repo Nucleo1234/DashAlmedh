@@ -81,12 +81,24 @@ let dataSaldoInicial=null;
 let saldoPorData={};
 let anoSelecionado=null;
 
-// ===== FORMATADOR DATA (SEM BUG)
+// ===== FORMATADOR DATA
 function formatarDataKey(date){
  let y = date.getFullYear();
  let m = String(date.getMonth()+1).padStart(2,'0');
  let d = String(date.getDate()).padStart(2,'0');
  return `${y}-${m}-${d}`;
+}
+
+// ===== CONVERSOR DATA (ANTI BUG)
+function converterData(v){
+ if(!v) return null;
+ let p = v.split('/');
+ return new Date(
+   Number(p[2]),
+   Number(p[1]) - 1,
+   Number(p[0]),
+   12,0,0 // 🔥 evita bug de fuso
+ );
 }
 
 // ===== CSV
@@ -109,12 +121,6 @@ function br(v){
 
 function formatar(v){
  return v.toLocaleString("pt-BR",{minimumFractionDigits:2});
-}
-
-function converterData(v){
- if(!v) return null;
- let p=v.split('/');
- return new Date(p[2],p[1]-1,p[0]);
 }
 
 // ===== IMPORTAÇÃO
@@ -166,7 +172,7 @@ function atualizarAno(){
  document.getElementById('detalheDia').innerHTML='';
 }
 
-// ===== MOTOR CORRIGIDO 🔥
+// ===== MOTOR CORRIGIDO
 function calcularFluxo(){
 
  let mapa={};
@@ -182,12 +188,10 @@ function calcularFluxo(){
 
  let keyInicial = formatarDataKey(dataSaldoInicial);
 
- // 🔥 REMOVE DATAS ANTERIORES
  let datasValidas = Object.keys(mapa)
    .filter(k => k >= keyInicial)
    .sort();
 
- // 🔥 GARANTE PRIMEIRO DIA
  if(!mapa[keyInicial]){
    mapa[keyInicial] = {entrada:0, saida:0};
    datasValidas.unshift(keyInicial);
@@ -198,7 +202,6 @@ function calcularFluxo(){
 
  datasValidas.forEach((k, index)=>{
 
-   // 🔥 PRIMEIRO DIA FIXO
    if(index === 0){
      saldoPorData[k] = {
        saldoInicial: saldoInicial,
@@ -275,7 +278,9 @@ function abrirTrimestre(t){
   let dias={};
 
   Object.keys(saldoPorData).forEach(k=>{
-    let d=new Date(k);
+
+    let [ano,mes,dia] = k.split('-');
+    let d = new Date(ano, mes-1, dia, 12);
 
     if(d.getMonth()===m){
       dias[d.getDate()]=saldoPorData[k];
