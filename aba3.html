@@ -21,45 +21,28 @@ h1 { text-align:center;}
     padding:10px;
     border-radius:8px;
     cursor:pointer;
-    transition:0.2s;
-}
-
-.card:hover {
-    transform:scale(1.05);
-    box-shadow:0 5px 15px rgba(0,0,0,0.2);
-}
-
-.mes {
-    background:white;
-    padding:10px;
-    margin-top:10px;
-    border-radius:8px;
 }
 
 .box-valor {
     border:2px solid black;
-    padding:5px 10px;
+    padding:5px;
     margin-top:5px;
 }
 
 .negativo { color:red; font-weight:bold;}
 
+.mes { background:white; padding:10px; margin-top:10px; border-radius:8px;}
+
 table { width:100%; border-collapse:collapse;}
 td,th { border:1px solid #ddd; padding:5px; text-align:center;}
 
-.detalhe {
-    margin-top:20px;
-    background:white;
-    padding:15px;
-    border-radius:8px;
-}
+.detalhe { margin-top:20px; background:white; padding:15px; border-radius:8px;}
 </style>
 </head>
 
 <body>
 
 <div class="container">
-
 <h1>Fluxo de Caixa Projetado</h1>
 
 Ano:
@@ -68,7 +51,6 @@ Ano:
 <div id="resumoTrimestres" class="resumo"></div>
 <div id="meses"></div>
 <div id="detalheDia" class="detalhe"></div>
-
 </div>
 
 <script>
@@ -109,6 +91,10 @@ function converterData(v){
  return new Date(p[2],p[1]-1,p[0]);
 }
 
+function keyData(d){
+ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+String(d.getDate()).padStart(2,'0');
+}
+
 // ===== IMPORTAÇÃO =====
 fetch(url).then(r=>r.text()).then(txt=>{
 
@@ -125,7 +111,7 @@ fetch(url).then(r=>r.text()).then(txt=>{
   return {
     data: converterData(l[3]),
     valor: br(l[2]),
-    descricao: l[10] || '',
+    descricao: l[10]||'',
     tipo
   };
 
@@ -147,6 +133,7 @@ function carregarAnos(){
 
 // ===== ATUALIZA =====
 function atualizarAno(){
+
  anoSelecionado=Number(document.getElementById('anoSelect').value);
 
  dadosFiltrados=dados.filter(d=>d.data.getFullYear()==anoSelecionado);
@@ -158,51 +145,62 @@ function atualizarAno(){
  document.getElementById('detalheDia').innerHTML='';
 }
 
-// ===== MOTOR CORRIGIDO 🔥 =====
+// ===== MOTOR CORRIGIDO (🔥 AQUI ESTÁ A CORREÇÃO REAL) =====
 function calcularSaldosAno(){
 
- saldoPorData = {};
+ saldoPorData={};
 
- let mapa = {};
+ let mapa={};
 
+ // agrupa movimentos
  dadosFiltrados.forEach(d=>{
-  let k = d.data.toISOString().slice(0,10);
+  let k=keyData(d.data);
+  if(!mapa[k]) mapa[k]={entrada:0,saida:0};
 
-  if(!mapa[k]) mapa[k] = {entrada:0,saida:0};
-
-  if(d.tipo==='entrada') mapa[k].entrada += d.valor;
-  else mapa[k].saida += d.valor;
+  if(d.tipo==='entrada') mapa[k].entrada+=d.valor;
+  else mapa[k].saida+=d.valor;
  });
 
- let dataInicio = dataSaldoInicial.toISOString().slice(0,10);
+ // 🔥 FORÇA DATA INICIAL
+ let inicio = new Date(dataSaldoInicial);
+ let kInicio = keyData(inicio);
 
- // 🔥 GARANTE DATA INICIAL (MESMO SEM MOVIMENTO)
- if(!mapa[dataInicio]){
-   mapa[dataInicio] = {entrada:0,saida:0};
- }
+ if(!mapa[kInicio]) mapa[kInicio]={entrada:0,saida:0};
 
- // 🔥 REMOVE TUDO ANTES DA DATA INICIAL
- let datas = Object.keys(mapa)
-   .filter(d => d >= dataInicio)
-   .sort();
+ // ordena datas
+ let datas = Object.keys(mapa).sort();
 
  let saldoAtual = saldoInicial;
 
- datas.forEach(k => {
+ datas.forEach((k,i)=>{
 
-   let entrada = mapa[k].entrada || 0;
-   let saida = mapa[k].saida || 0;
+   // 🔥 PRIMEIRA DATA É SEMPRE A DATA DO SALDO
+   if(k === kInicio){
+       saldoPorData[k]={
+         saldoInicial: saldoInicial,
+         entrada: mapa[k].entrada,
+         saida: mapa[k].saida,
+         saldoFinal: saldoInicial + mapa[k].entrada - mapa[k].saida
+       };
 
-   let saldoFinal = saldoAtual + entrada - saida;
+       saldoAtual = saldoPorData[k].saldoFinal;
+   } else if(k > kInicio){
 
-   saldoPorData[k] = {
-     saldoInicial: saldoAtual,
-     entrada: entrada,
-     saida: saida,
-     saldoFinal: saldoFinal
-   };
+       let entrada = mapa[k].entrada;
+       let saida = mapa[k].saida;
 
-   saldoAtual = saldoFinal;
+       let final = saldoAtual + entrada - saida;
+
+       saldoPorData[k]={
+         saldoInicial: saldoAtual,
+         entrada,
+         saida,
+         saldoFinal: final
+       };
+
+       saldoAtual = final;
+   }
+
  });
 }
 
@@ -246,12 +244,13 @@ function selecionarTrimestre(t){
  container.innerHTML='';
  document.getElementById('detalheDia').innerHTML='';
 
- let triData = tri[t];
- let mesInicial = triData[0];
+ // regra: bloquear antes da data inicial
+ if(anoSelecionado < dataSaldoInicial.getFullYear()){
+   return;
+ }
 
- if(anoSelecionado < dataSaldoInicial.getFullYear() ||
-   (anoSelecionado === dataSaldoInicial.getFullYear() && mesInicial < dataSaldoInicial.getMonth())){
-    return;
+ if(anoSelecionado === dataSaldoInicial.getFullYear() && t === 1){
+   return;
  }
 
  tri[t].forEach(m=>{
