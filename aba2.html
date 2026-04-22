@@ -11,11 +11,6 @@ body { font-family: Arial; margin:0; background:#eef1f5; }
 
 header { padding:15px; background:#1f2d3d; color:#fff; }
 
-.header-top {
- display:flex;
- justify-content:center;
-}
-
 .header-cards {
  display:flex;
  gap:15px;
@@ -32,13 +27,11 @@ header { padding:15px; background:#1f2d3d; color:#fff; }
 
 .container { padding:20px; }
 
-.section { margin-bottom:25px; }
-
 .card {
  background:#fff;
  padding:15px;
  border-radius:10px;
- box-shadow:0 2px 8px rgba(0,0,0,0.08);
+ margin-bottom:20px;
 }
 
 table { width:100%; border-collapse: collapse; }
@@ -53,14 +46,11 @@ th { background:#34495e; color:#fff; }
 
 td { text-align:right; }
 
-th:first-child, td:first-child { text-align:left; }
-
-.desc { text-align:left !important; }
+td:first-child, th:first-child { text-align:left; }
 
 .flex { display:flex; gap:20px; }
 
 .small-chart { height:250px !important; }
-
 </style>
 </head>
 
@@ -68,9 +58,7 @@ th:first-child, td:first-child { text-align:left; }
 
 <header>
 
-<div class="header-top">
 <h2>Dashboard Financeiro</h2>
-</div>
 
 <div class="header-cards">
 <div class="card-header"><div>Total Entradas</div><div id="totalEntradas">R$ 0</div></div>
@@ -82,16 +70,23 @@ th:first-child, td:first-child { text-align:left; }
 
 <div class="container">
 
-<div class="section card">
+<div class="card">
 <canvas id="saldoChart" class="small-chart"></canvas>
 </div>
 
-<div class="section flex">
-<div class="card" style="width:50%"><h3>2025</h3><table id="table2025"></table></div>
-<div class="card" style="width:50%"><h3>2026</h3><table id="table2026"></table></div>
+<div class="flex">
+<div class="card" style="width:50%">
+<h3>2025</h3>
+<table id="table2025"></table>
 </div>
 
-<div class="section flex">
+<div class="card" style="width:50%">
+<h3>2026</h3>
+<table id="table2026"></table>
+</div>
+</div>
+
+<div class="flex">
 <div class="card" style="width:50%">
 <h3 id="mensalTitulo">Visão Mensal</h3>
 <table id="mensalTable"></table>
@@ -103,7 +98,7 @@ th:first-child, td:first-child { text-align:left; }
 </div>
 </div>
 
-<div class="section card">
+<div class="card">
 <h3>Resumo por Conta de Custo</h3>
 <div style="overflow:auto">
 <table id="custosTable"></table>
@@ -144,7 +139,7 @@ function parseDate(v){
  return new Date(p[2],p[1]-1,p[0]);
 }
 
-// ===== NORMALIZAÇÃO =====
+// ===== NORMALIZA =====
 function normalize(linhas){
  return linhas.slice(1).map(l=>({
   data: parseDate(l[0]),
@@ -184,8 +179,8 @@ function buildChart(){
 }
 
 // ===== ANO =====
-function processYear(y){
- let arr=Array(12).fill().map(()=>({e:0,s:0,saldo:0}));
+function buildYear(y,id){
+ let arr=Array(12).fill().map(()=>({e:0,s:0}));
 
  rawData.forEach(r=>{
   if(r.data.getFullYear()==y){
@@ -195,21 +190,16 @@ function processYear(y){
   }
  });
 
- arr.forEach(r=>r.saldo=r.e-r.s);
- return arr;
-}
-
-function buildYear(y,id){
- let d=processYear(y);
  let html='<tr><th>Mês</th><th>Entrada</th><th>Saída</th><th>Saldo</th></tr>';
 
- d.forEach((r,i)=>{
+ arr.forEach((r,i)=>{
   if(r.e!==0 || r.s!==0){
+   let saldo=r.e-r.s;
    html+=`<tr>
    <td>${meses[i]}</td>
    <td>${r.e.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
    <td>${r.s.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
-   <td><a onclick="loadMonth(${y},${i})">${r.saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</a></td>
+   <td><a onclick="loadMonth(${y},${i})">${saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</a></td>
    </tr>`;
   }
  });
@@ -220,7 +210,6 @@ function buildYear(y,id){
 // ===== MÊS =====
 function loadMonth(y,m){
 
- // limpa detalhes
  document.getElementById('diarioTable').innerHTML='';
  document.getElementById('diarioTitulo').innerText="Detalhes";
 
@@ -268,22 +257,88 @@ function loadMonth(y,m){
 function loadDay(y,m,d){
  let dados=rawData.filter(r=>r.data.getFullYear()==y&&r.data.getMonth()==m&&r.data.getDate()==d);
 
- document.getElementById('diarioTitulo').innerText=`Detalhes - ${d}/${m+1}/${y}`;
-
  let html='<tr><th>Descrição</th><th>Entrada</th><th>Saída</th><th>Saldo</th></tr>';
 
  dados.forEach(r=>{
-  let saldo=r.credito-r.debito;
-
   html+=`<tr>
-  <td class="desc">${r.descricao}</td>
+  <td>${r.descricao}</td>
   <td>${r.credito.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
   <td>${r.debito.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
-  <td>${saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+  <td>${(r.credito-r.debito).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
   </tr>`;
  });
 
  document.getElementById('diarioTable').innerHTML=html;
+}
+
+// ===== RESUMO =====
+function buildCustos(){
+
+ let mapa={};
+ let mesesSet=new Set();
+
+ rawData.forEach(r=>{
+  let key=r.descricao;
+
+  let mesAno=`${r.data.getMonth()}-${r.data.getFullYear()}`;
+  mesesSet.add(mesAno);
+
+  if(!mapa[key]) mapa[key]={};
+
+  if(!mapa[key][mesAno]) mapa[key][mesAno]=0;
+
+  mapa[key][mesAno]+=r.credito-r.debito;
+ });
+
+ let mesesOrdenados=[...mesesSet].sort((a,b)=>{
+  let [m1,y1]=a.split('-');
+  let [m2,y2]=b.split('-');
+  return new Date(y1,m1)-new Date(y2,m2);
+ });
+
+ let contas=Object.keys(mapa).sort();
+
+ let header='<tr><th>Conta</th>';
+
+ mesesOrdenados.forEach(m=>{
+  let [mes,ano]=m.split('-');
+  header+=`<th>${meses[mes]}/${ano}</th>`;
+ });
+
+ header+='<th>Total</th></tr>';
+
+ let totaisCol=Array(mesesOrdenados.length).fill(0);
+ let totalGeral=0;
+
+ let rows='';
+
+ contas.forEach(c=>{
+  let totalLinha=0;
+  rows+=`<tr><td>${c}</td>`;
+
+  mesesOrdenados.forEach((m,i)=>{
+   let v=mapa[c][m]||0;
+   totalLinha+=v;
+   totaisCol[i]+=v;
+
+   rows+=`<td>${v? v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):''}</td>`;
+  });
+
+  totalGeral+=totalLinha;
+
+  rows+=`<td><b>${totalLinha.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</b></td></tr>`;
+ });
+
+ rows+=`<tr style="font-weight:bold;background:#eee">
+ <td>Total</td>`;
+
+ totaisCol.forEach(v=>{
+  rows+=`<td>${v? v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):''}</td>`;
+ });
+
+ rows+=`<td>${totalGeral.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td></tr>`;
+
+ document.getElementById('custosTable').innerHTML=header+rows;
 }
 
 // ===== INIT =====
@@ -297,6 +352,7 @@ fetch(url)
  buildChart();
  buildYear(2025,'table2025');
  buildYear(2026,'table2026');
+ buildCustos(); // 🔥 voltou
 });
 
 </script>
