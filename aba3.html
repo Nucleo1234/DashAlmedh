@@ -100,10 +100,9 @@ function br(v){
 }
 
 function formatar(v){
- return v.toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2});
+ return v.toLocaleString("pt-BR",{minimumFractionDigits:2});
 }
 
-// ===== DATA =====
 function converterData(v){
  if(!v) return null;
  let p=v.split('/');
@@ -117,16 +116,16 @@ fetch(url).then(r=>r.text()).then(txt=>{
 
  dados = linhas.slice(1).map(l=>{
 
-  let referencia = (l[4]||'').toUpperCase();
+  let ref=(l[4]||'').toUpperCase();
 
-  let tipo = null;
-  if(referencia.includes('RECEBER')) tipo='entrada';
-  if(referencia.includes('PAGAR')) tipo='saida';
+  let tipo=null;
+  if(ref.includes('RECEBER')) tipo='entrada';
+  if(ref.includes('PAGAR')) tipo='saida';
 
   return {
     data: converterData(l[3]),
     valor: br(l[2]),
-    descricao: l[10] || '',
+    descricao: l[10]||'',
     tipo
   };
 
@@ -148,6 +147,7 @@ function carregarAnos(){
 
 // ===== ATUALIZA =====
 function atualizarAno(){
+
  anoSelecionado=Number(document.getElementById('anoSelect').value);
 
  dadosFiltrados=dados.filter(d=>d.data.getFullYear()==anoSelecionado);
@@ -159,7 +159,7 @@ function atualizarAno(){
  document.getElementById('detalheDia').innerHTML='';
 }
 
-// ===== MOTOR =====
+// ===== MOTOR (COM DATA BASE 🔥) =====
 function calcularSaldosAno(){
 
  saldoPorData={};
@@ -177,23 +177,33 @@ function calcularSaldosAno(){
 
  let datas=Object.keys(mapa).sort();
 
- let saldoAtual = saldoInicial;
+ let saldoAtual = null;
 
  datas.forEach(k=>{
 
-    let entrada = mapa[k].entrada;
-    let saida = mapa[k].saida;
+   let dataAtual=new Date(k);
 
-    let final = saldoAtual + entrada - saida;
+   // 🔥 só começa quando bater a data do saldo
+   if(dataAtual.getTime() === dataSaldoInicial.getTime()){
+      saldoAtual = saldoInicial;
+   }
 
-    saldoPorData[k] = {
-        saldoInicial: saldoAtual,
-        entrada,
-        saida,
-        saldoFinal: final
-    };
+   if(saldoAtual!==null){
 
-    saldoAtual = final;
+      let entrada = mapa[k].entrada;
+      let saida = mapa[k].saida;
+
+      let final = saldoAtual + entrada - saida;
+
+      saldoPorData[k] = {
+          saldoInicial: saldoAtual,
+          entrada,
+          saida,
+          saldoFinal: final
+      };
+
+      saldoAtual = final;
+   }
  });
 }
 
@@ -230,18 +240,23 @@ function gerarResumoTrimestres(){
  }
 }
 
-// ===== TRIMESTRE (AJUSTADO 🔥) =====
+// ===== REGRA PRINCIPAL 🔥 =====
 function selecionarTrimestre(t){
 
  let container=document.getElementById('meses');
  container.innerHTML='';
  document.getElementById('detalheDia').innerHTML='';
 
- let mesSaldo = dataSaldoInicial.getMonth();
- let triSaldo = Object.keys(tri).find(k=>tri[k].includes(mesSaldo));
+ // 🔴 ANO DIFERENTE → BLOQUEIA
+ if(anoSelecionado !== dataSaldoInicial.getFullYear()){
+   return;
+ }
 
- // 🔴 Se for trimestre antes do saldo → não mostra nada
- if(anoSelecionado == dataSaldoInicial.getFullYear() && t < triSaldo){
+ // 🔴 TRIMESTRE ANTES DA DATA → BLOQUEIA
+ let mesInicial = dataSaldoInicial.getMonth();
+ let triInicial = Math.floor(mesInicial/3)+1;
+
+ if(t < triInicial){
    return;
  }
 
@@ -254,14 +269,8 @@ function selecionarTrimestre(t){
 
     if(d.getMonth()===m){
 
-      // 🔥 CORTE NO DIA DO SALDO
-      if(
-        anoSelecionado == dataSaldoInicial.getFullYear() &&
-        m == mesSaldo &&
-        d < dataSaldoInicial
-      ){
-        return;
-      }
+      // 🔥 BLOQUEIA dias antes da data inicial no mês inicial
+      if(m === mesInicial && d < dataSaldoInicial) return;
 
       dias[d.getDate()]=saldoPorData[k];
     }
