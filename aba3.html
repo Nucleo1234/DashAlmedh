@@ -177,6 +177,7 @@ function calcularFluxo(){
 
  let mapa={};
 
+ // 🔹 agrupa valores por data
  dadosFiltrados.forEach(d=>{
   let k = formatarDataKey(d.data);
 
@@ -188,43 +189,35 @@ function calcularFluxo(){
 
  let keyInicial = formatarDataKey(dataSaldoInicial);
 
+ // 🔥 garante existência do dia inicial
+ if(!mapa[keyInicial]){
+   mapa[keyInicial] = {entrada:0, saida:0};
+ }
+
+ // 🔹 pega apenas datas >= data base
  let datasValidas = Object.keys(mapa)
    .filter(k => k >= keyInicial)
    .sort();
 
- if(!mapa[keyInicial]){
-   mapa[keyInicial] = {entrada:0, saida:0};
-   datasValidas.unshift(keyInicial);
- }
-
  let saldoAtual = saldoInicial;
  saldoPorData = {};
 
- datasValidas.forEach((k, index)=>{
-
-   if(index === 0){
-     saldoPorData[k] = {
-       saldoInicial: saldoInicial,
-       entrada: 0,
-       saida: 0,
-       saldoFinal: saldoInicial
-     };
-     return;
-   }
+ datasValidas.forEach((k)=>{
 
    let entrada = mapa[k]?.entrada || 0;
    let saida = mapa[k]?.saida || 0;
 
-   let final = saldoAtual + entrada - saida;
+   let saldoInicialDia = saldoAtual;
+   let saldoFinal = saldoInicialDia + entrada - saida;
 
    saldoPorData[k] = {
-     saldoInicial: saldoAtual,
+     saldoInicial: saldoInicialDia,
      entrada,
      saida,
-     saldoFinal: final
+     saldoFinal
    };
 
-   saldoAtual = final;
+   saldoAtual = saldoFinal;
  });
 }
 
