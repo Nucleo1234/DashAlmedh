@@ -53,6 +53,37 @@ td,th { border:1px solid #ddd; padding:5px; text-align:center;}
     padding:15px;
     border-radius:8px;
 }
+
+.flex-detalhe {
+    display: flex;
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.coluna {
+    width: 50%;
+}
+
+.titulo-coluna {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.total {
+    margin-top: 5px;
+    font-weight: bold;
+}
+
+.saldo-final {
+    margin-top: 15px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+
+
+
+
 </style>
 </head>
 
@@ -332,24 +363,55 @@ function mostrarDetalhe(mes,dia){
 
  let saldo=totE-totS;
 
+ let nomeMes=new Date(anoSelecionado,mes)
+   .toLocaleString('pt-BR',{month:'long'});
+
  document.getElementById('detalheDia').innerHTML=`
- <h3>Detalhes do dia</h3>
 
- <b>Entradas</b>
- <table>
- ${entradas.map(e=>`<tr><td>${e.descricao}</td><td>${formatar(e.valor)}</td></tr>`).join('')}
- </table>
+ <h3>Detalhes do dia escolhido</h3>
+ <p><b>Ano:</b> ${anoSelecionado}</p>
+ <p><b>Mês:</b> ${nomeMes}</p>
+ <p><b>Dia:</b> ${String(dia).padStart(2,'0')}</p>
 
- <b>Saídas</b>
- <table>
- ${saidas.map(s=>`<tr><td>${s.descricao}</td><td>-${formatar(s.valor)}</td></tr>`).join('')}
- </table>
+ <div class="flex-detalhe">
 
- <h3 class="${saldo<0?'negativo':''}">
- Saldo: ${formatar(saldo)}
- </h3>`;
+   <div class="coluna">
+     <div class="titulo-coluna">Entrada</div>
+
+     <table>
+       <tr><th>Descrição</th><th>Valor</th></tr>
+       ${entradas.map(e=>`
+         <tr>
+           <td>${e.descricao}</td>
+           <td>${formatar(e.valor)}</td>
+         </tr>`).join('')}
+     </table>
+
+     <div class="total">Total Entrada: ${formatar(totE)}</div>
+   </div>
+
+   <div class="coluna">
+     <div class="titulo-coluna">Saída</div>
+
+     <table>
+       <tr><th>Descrição</th><th>Valor</th></tr>
+       ${saidas.map(s=>`
+         <tr>
+           <td>${s.descricao}</td>
+           <td>-${formatar(s.valor)}</td>
+         </tr>`).join('')}
+     </table>
+
+     <div class="total">Total Saída: -${formatar(totS)}</div>
+   </div>
+
+ </div>
+
+ <div class="saldo-final ${saldo<0?'negativo':''}">
+   Saldo do dia: ${formatar(saldo)}
+ </div>
+ `;
 }
-
 </script>
 
 </body>
