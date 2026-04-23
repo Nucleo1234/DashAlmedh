@@ -368,11 +368,9 @@ function mostrarDetalhe(mes,dia){
 
  document.getElementById('detalheDia').innerHTML=`
 
-<h3 style="display:flex; justify-content:space-between;">
-  <span>Detalhes do dia escolhido</span>
-  <span>${String(dia).padStart(2,'0')}/${String(mes+1).padStart(2,'0')}/${anoSelecionado}</span>
+<h3>
+Detalhes do dia escolhido - ${String(dia).padStart(2,'0')}/${String(mes+1).padStart(2,'0')}/${anoSelecionado}
 </h3>
-
 
  <div class="flex-detalhe">
 
